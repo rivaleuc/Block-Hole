@@ -1,0 +1,3259 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.min.js" crossorigin="anonymous"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <title>Block and Hole</title>
+  <style>
+    html {
+      overflow: hidden;
+      height: 100vh;
+      height: 100dvh;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      overflow: hidden;
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: monospace;
+      font-size: 2em;
+      background: linear-gradient(180deg, #4dd9cc 0%, #c8f2c8 100%);
+    }
+
+    #level {
+      position: absolute;
+      top: 70px;
+      right: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background: #4a8fff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-family: monospace;
+      font-weight: bold;
+      box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+      width: auto;
+      text-align: right;
+    }
+
+    #restart {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background: #ff4466;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: monospace;
+      font-weight: bold;
+      box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Lives HUD */
+    #lives {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      display: none;
+      z-index: 1001;
+    }
+
+    #lives .heart {
+      font-size: 20px;
+      color: #ff4466;
+      margin-right: 6px;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    #lives .heart.lost {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    #restart:hover {
+      background: #ff6688;
+    }
+
+    #home-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      background: linear-gradient(180deg, #4dd9cc 0%, #c8f2c8 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      z-index: 1000;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 24px 0 32px;
+      box-sizing: border-box;
+    }
+
+    #home-screen.hidden {
+      display: none;
+    }
+
+    .cloud {
+      position: absolute;
+      opacity: 0.8;
+      z-index: 1;
+    }
+
+    .cloud::before,
+    .cloud::after {
+      content: '';
+      position: absolute;
+      background: rgba(200, 240, 230, 0.6);
+      border-radius: 50%;
+    }
+
+    .cloud::before {
+      width: 50%;
+      height: 80%;
+      top: 10%;
+      left: 10%;
+    }
+
+    .cloud::after {
+      width: 40%;
+      height: 70%;
+      top: 5%;
+      right: 15%;
+    }
+
+    .cloud {
+      background: rgba(200, 240, 230, 0.6);
+      border-radius: 100px;
+    }
+
+    #game-clouds {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      display: none !important;
+    }
+
+    .cloud1 {
+      width: 100px;
+      height: 50px;
+      top: 50px;
+      left: 50px;
+    }
+
+    .cloud2 {
+      width: 120px;
+      height: 60px;
+      top: 200px;
+      right: 60px;
+    }
+
+    .cloud3 {
+      width: 110px;
+      height: 55px;
+      bottom: 200px;
+      left: 40px;
+    }
+
+    .cloud4 {
+      width: 95px;
+      height: 48px;
+      bottom: 80px;
+      right: 70px;
+    }
+
+    .cloud5 {
+      width: 105px;
+      height: 52px;
+      top: 120px;
+      left: 30px;
+    }
+
+    .cloud6 {
+      width: 115px;
+      height: 58px;
+      bottom: 140px;
+      right: 50px;
+    }
+
+    #home-content {
+      text-align: center;
+      z-index: 10;
+    }
+
+    #home-block-container {
+      margin-bottom: 10px;
+      /* keep logo spacing; raise text via negative margins */
+      perspective: 500px;
+    }
+
+    #home-title {
+      font-size: 52px;
+      font-weight: bold;
+      color: rgba(0,0,0,0.75);
+      text-shadow: 1px 1px 3px rgba(255,255,255,0.3);
+      margin-top: -16px;
+      margin-bottom: 10px;
+      letter-spacing: 3px;
+    }
+
+    #home-subtitle {
+      font-size: 36px;
+      color: rgba(0,0,0,0.55);
+      text-shadow: none;
+      margin-top: -6px;
+      margin-bottom: 25px;
+      font-weight: 300;
+    }
+
+    #start-btn {
+      padding: 12px 32px;
+      font-size: 24px;
+      font-family: monospace;
+      font-weight: bold;
+      background: white;
+      color: #4dd9cc;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s;
+      margin-top: 12px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Connected state: turn Start button red */
+    #start-btn.connected {
+      background: #ff4466;
+      color: white;
+    }
+
+    #start-btn:hover {
+      background: #f0f0f0;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    #start-btn.connected:hover {
+      background: #ff6688;
+    }
+
+    #start-btn:disabled,
+    #weekly-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none !important;
+      filter: grayscale(0.4);
+    }
+
+    /* Debug Skip Wallet button */
+    #debug-start {
+      padding: 12px 32px;
+      font-size: 20px;
+      font-family: monospace;
+      font-weight: bold;
+      background: #ffd54f;
+      /* amber */
+      color: #4a4a4a;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s;
+      margin-top: 8px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #debug-start:hover {
+      background: #ffe082;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Debug Next Map button removed from game UI */
+    /* Debug: Start Map button and input */
+    #debug-start-map {
+      padding: 10px 24px;
+      font-size: 18px;
+      font-family: monospace;
+      font-weight: bold;
+      background: #ffd54f;
+      /* amber */
+      color: #4a4a4a;
+      border: none;
+      border-radius: 40px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s;
+      margin-top: 6px;
+      display: inline-block;
+    }
+
+    #debug-start-map:hover {
+      background: #ffe082;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    #map-number {
+      width: 90px;
+      padding: 8px 10px;
+      font-size: 18px;
+      font-family: monospace;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      margin-right: 8px;
+      text-align: center;
+    }
+
+    /* Wallet UI */
+    #wallet-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    #wallet-menu {
+      display: none !important;
+      /* menu disabled: keep Start Game area uncluttered */
+    }
+
+    /* Removed old red disconnect button styles (keeping only two buttons) */
+    #wallet-area {
+      margin-top: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #wallet-connect {
+      padding: 12px 32px;
+      font-size: 24px;
+      font-family: monospace;
+      font-weight: bold;
+      background: #ffffff;
+      color: #4dd9cc;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s;
+      margin-top: 8px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #wallet-connect:hover {
+      background: #f0f0f0;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Wallet button when connected */
+    #wallet-connect.connected {
+      background: #4dd9cc;
+      color: #ffffff;
+    }
+
+    /* On hover over a connected wallet button, make it transparent */
+    #wallet-container.connected:hover #wallet-connect.connected {
+      background: transparent;
+      color: #4dd9cc;
+      border: 2px solid #4dd9cc;
+    }
+
+    #wallet-connect:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    #mobile-controls {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      #mobile-controls {
+        display: block;
+      }
+    }
+
+    .arrow-btn {
+      width: 60px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.3);
+      border: 2px solid white;
+      border-radius: 10px;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      margin: 5px;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .arrow-btn:active {
+      background: rgba(255, 255, 255, 0.5);
+      transform: scale(0.95);
+    }
+
+    .controls-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Lose popup */
+    #lose-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      background: rgba(0, 0, 0, 0.35);
+      display: none;
+      z-index: 1100;
+    }
+
+    #lose-modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #1f2937;
+      color: #fff;
+      padding: 20px 24px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      min-width: 260px;
+      text-align: center;
+      font-family: monospace;
+    }
+
+    #lose-title {
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+
+    #lose-sub {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 16px;
+    }
+
+    #try-again-btn {
+      padding: 10px 20px;
+      font-size: 18px;
+      background: #ff4466;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    #try-again-btn:hover {
+      background: #ff6688;
+    }
+
+    /* Win popup */
+    #win-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      z-index: 1200;
+    }
+
+    #win-modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #4dd9cc 0%, #34ebab 100%);
+      color: #fff;
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+      min-width: 320px;
+      text-align: center;
+      font-family: monospace;
+    }
+
+    #win-title {
+      font-size: 28px;
+      margin-bottom: 12px;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    #win-sub {
+      font-size: 16px;
+      opacity: 0.95;
+      margin-bottom: 24px;
+      line-height: 1.4;
+    }
+
+    .win-btn {
+      padding: 12px 24px;
+      font-size: 18px;
+      background: #fff;
+      color: #4dd9cc;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+      margin: 0 8px;
+      font-family: monospace;
+      transition: all 0.3s;
+    }
+
+    .win-btn:hover {
+      background: #f0f0f0;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    /* GenLayer Leaderboard */
+    #gl-leaderboard {
+      display: none;
+      margin-top: 18px;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 14px;
+      padding: 12px 18px;
+      min-width: 240px;
+      max-width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+      backdrop-filter: blur(8px);
+    }
+
+    .gl-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    .gl-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #ffffff;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      font-family: monospace;
+      font-weight: 500;
+    }
+
+    .gl-row:last-child {
+      border-bottom: none;
+    }
+
+    .gl-badge {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.6);
+      text-align: center;
+      margin-top: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    #gl-status {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      text-align: center;
+      margin-top: 6px;
+      min-height: 16px;
+      font-family: monospace;
+    }
+
+    /* My Score panel */
+    #my-score-panel {
+      display: none;
+      margin-top: 10px;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 12px;
+      padding: 10px 16px;
+      min-width: 240px;
+      max-width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+      font-family: monospace;
+      font-size: 12px;
+      color: white;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+
+    .ms-title {
+      font-size: 11px;
+      letter-spacing: 1px;
+      opacity: 0.7;
+      margin-bottom: 5px;
+    }
+
+    .ms-rank {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+
+    .ms-stats {
+      opacity: 0.85;
+      margin-bottom: 3px;
+    }
+
+    .ms-xp {
+      font-size: 14px;
+      font-weight: bold;
+      color: #ffe082;
+    }
+
+    /* Weekly Challenge */
+    #weekly-btn {
+      padding: 10px 28px;
+      font-size: 18px;
+      font-family: monospace;
+      font-weight: bold;
+      background: rgba(255, 255, 255, 0.35);
+      color: rgba(0,0,0,0.7);
+      border: 2px solid rgba(0,0,0,0.2);
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s;
+      margin-top: 8px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #weekly-btn:hover {
+      background: rgba(255, 255, 255, 0.35);
+      transform: translateY(-2px);
+    }
+
+    /* Room section */
+    .room-divider {
+      margin: 10px auto 8px;
+      font-size: 12px;
+      color: rgba(0,0,0,0.4);
+      letter-spacing: 1px;
+    }
+    #create-room-btn {
+      padding: 10px 28px;
+      font-size: 16px;
+      font-family: monospace;
+      font-weight: bold;
+      background: rgba(255,200,80,0.35);
+      color: rgba(0,0,0,0.7);
+      border: 2px solid rgba(200,150,0,0.4);
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+      transition: all 0.3s;
+      display: block;
+      margin: 0 auto 8px;
+    }
+    #create-room-btn:hover:not(:disabled) {
+      background: rgba(255,200,80,0.38);
+      transform: translateY(-2px);
+    }
+    #create-room-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    .lvl-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: 2px solid rgba(0,0,0,0.25);
+      background: rgba(255,255,255,0.35);
+      color: rgba(0,0,0,0.7);
+      font-size: 15px;
+      font-weight: bold;
+      font-family: monospace;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lvl-btn:hover { background: rgba(255,200,80,0.35); border-color: #ffe082; color: #ffe082; transform: scale(1.1); }
+    .join-room-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 0 auto 4px;
+    }
+    #room-code-input {
+      padding: 8px 14px;
+      font-size: 15px;
+      font-family: monospace;
+      font-weight: bold;
+      letter-spacing: 3px;
+      background: rgba(255,255,255,0.45);
+      color: rgba(0,0,0,0.75);
+      border: 2px solid rgba(0,0,0,0.2);
+      border-radius: 30px;
+      width: 120px;
+      text-align: center;
+      outline: none;
+    }
+    #room-code-input::placeholder { color: rgba(0,0,0,0.35); letter-spacing:1px; font-size:13px; }
+    #join-room-btn {
+      padding: 8px 18px;
+      font-size: 14px;
+      font-family: monospace;
+      font-weight: bold;
+      background: rgba(255,255,255,0.35);
+      color: rgba(0,0,0,0.7);
+      border: 2px solid rgba(0,0,0,0.2);
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    #join-room-btn:hover:not(:disabled) { background: rgba(255,255,255,0.35); }
+    #join-room-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    #room-status { font-size:12px; color:rgba(0,0,0,0.5); font-family:monospace; text-align:center; margin-top:4px; min-height:16px; }
+    #lobby-panel {
+      margin-top: 12px;
+      width: 100%;
+      max-width: 320px;
+    }
+    .lobby-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding: 0 2px;
+    }
+    .lobby-header-left {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .lobby-live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+      animation: livePulse 1.6s ease-in-out infinite;
+    }
+    @keyframes livePulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50% { opacity:0.5; transform:scale(0.8); }
+    }
+    .lobby-header-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: rgba(0,0,0,0.55);
+    }
+    .lobby-refresh-btn {
+      background: rgba(255,255,255,0.4);
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 20px;
+      padding: 2px 8px;
+      font-size: 11px;
+      color: rgba(0,0,0,0.45);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: monospace;
+    }
+    .lobby-refresh-btn:hover { background: rgba(255,255,255,0.65); color: rgba(0,0,0,0.7); }
+    #lobby-list { display: flex; flex-direction: column; gap: 7px; }
+    .lobby-empty {
+      text-align: center;
+      padding: 14px;
+      color: rgba(0,0,0,0.3);
+      font-size: 12px;
+      font-family: monospace;
+      background: rgba(255,255,255,0.2);
+      border-radius: 12px;
+      border: 1px dashed rgba(0,0,0,0.12);
+    }
+    .lobby-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.45);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.7);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-family: monospace;
+      transition: all 0.2s;
+    }
+    .lobby-row:hover { background: rgba(255,255,255,0.62); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .lobby-row-info { display: flex; flex-direction: column; gap: 3px; }
+    .lobby-row-host {
+      color: rgba(0,0,0,0.7);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .lobby-row-host::before { content:'👤'; font-size:10px; }
+    .lobby-row-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .lobby-lvl-badge {
+      background: rgba(77,217,204,0.25);
+      color: rgba(0,100,85,0.85);
+      border: 1px solid rgba(77,217,204,0.5);
+      border-radius: 20px;
+      padding: 1px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .lobby-players-badge {
+      color: rgba(0,0,0,0.38);
+      font-size: 10px;
+    }
+    .lobby-join-btn {
+      background: linear-gradient(135deg, #2a9d5c, #22c55e);
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 7px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      font-family: monospace;
+      box-shadow: 0 3px 10px rgba(34,197,94,0.35);
+      transition: all 0.2s;
+    }
+    .lobby-join-btn:hover { transform: scale(1.05); box-shadow: 0 4px 14px rgba(34,197,94,0.5); }
+
+    /* Room code modal */
+    #room-code-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+    #room-code-modal.active { display: flex; }
+    .rcm-box {
+      background: linear-gradient(160deg, #3abfb3, #5dd68c);
+      border-radius: 20px;
+      padding: 32px 28px 24px;
+      text-align: center;
+      color: white;
+      font-family: monospace;
+      max-width: 320px;
+      width: 90%;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+    }
+    .rcm-title { font-size: 14px; opacity:0.8; letter-spacing:2px; margin-bottom:8px; }
+    .rcm-code {
+      font-size: 42px;
+      font-weight: bold;
+      letter-spacing: 6px;
+      color: #fff;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      margin: 8px 0 4px;
+    }
+    .rcm-sub { font-size: 12px; opacity:0.7; margin-bottom:20px; }
+    .rcm-copy {
+      padding: 7px 20px; font-size:13px; font-family:monospace; font-weight:bold;
+      background: rgba(255,255,255,0.2); color:white; border:2px solid rgba(255,255,255,0.5);
+      border-radius:30px; cursor:pointer; margin-bottom:10px; transition:all 0.2s;
+    }
+    .rcm-copy:hover { background:rgba(255,255,255,0.35); }
+    .rcm-start {
+      display: block; width:100%; padding:12px; font-size:17px; font-family:monospace;
+      font-weight:bold; background:white; color:#3abfb3; border:none;
+      border-radius:40px; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,0.15);
+      transition: all 0.2s; margin-top:8px;
+    }
+    .rcm-start:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.2); }
+
+    #challenge-info {
+      display: none;
+      margin-top: 6px;
+      font-size: 12px;
+      color: rgba(0,0,0,0.5);
+      font-family: monospace;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+
+    #move-counter {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      padding: 7px 16px;
+      background: rgba(0, 0, 0, 0.55);
+      color: white;
+      border-radius: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      font-weight: bold;
+      z-index: 1002;
+      pointer-events: none;
+    }
+
+    /* Challenge Win Modal */
+    #challenge-win-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #challenge-win-overlay.active {
+      display: flex;
+    }
+
+    #challenge-win-modal {
+      background: linear-gradient(135deg, #2eb8a8, #4dd9cc);
+      border-radius: 20px;
+      padding: 28px 24px;
+      max-width: 320px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      color: white;
+      font-family: monospace;
+    }
+
+    #challenge-win-title {
+      font-size: 26px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    #challenge-win-stats {
+      font-size: 15px;
+      margin: 10px 0;
+      opacity: 0.95;
+    }
+
+    #challenge-win-gl-status {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.7);
+      min-height: 14px;
+      margin: 6px 0;
+    }
+
+    #challenge-win-leaderboard {
+      margin: 10px 0;
+      text-align: left;
+    }
+
+    #challenge-win-leaderboard .gl-title {
+      margin-bottom: 6px;
+    }
+
+    .cw-btn {
+      padding: 10px 24px;
+      font-size: 16px;
+      font-family: monospace;
+      font-weight: bold;
+      background: white;
+      color: #2eb8a8;
+      border: none;
+      border-radius: 40px;
+      cursor: pointer;
+      margin: 6px 4px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s;
+    }
+
+    .cw-btn:hover {
+      background: #f0f0f0;
+      transform: translateY(-2px);
+    }
+
+    /* AI Grade reveal */
+    #challenge-win-grade {
+      margin: 6px 0 2px;
+    }
+
+    #challenge-win-verdict {
+      margin-bottom: 6px;
+    }
+
+    .grade-reveal {
+      font-size: 52px;
+      font-weight: bold;
+      letter-spacing: 4px;
+      animation: gradeIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes gradeIn {
+      from {
+        transform: scale(0.2);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .grade-S {
+      color: #ffd700;
+      text-shadow: 0 0 24px rgba(255, 215, 0, 0.9), 0 0 8px rgba(255, 215, 0, 0.6);
+    }
+
+    .grade-A {
+      color: #7fffff;
+      text-shadow: 0 0 20px rgba(100, 255, 255, 0.7);
+    }
+
+    .grade-B {
+      color: #34eb8a;
+      text-shadow: 0 0 16px rgba(52, 235, 138, 0.6);
+    }
+
+    .grade-C {
+      color: #ffffff;
+    }
+
+    .ai-judging {
+      font-size: 12px;
+      opacity: 0.7;
+      animation: blink 1.4s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 0.35; }
+      50% { opacity: 1; }
+    }
+
+    /* ═══════════════════════════════════════════
+       UNIFIED DESIGN SYSTEM OVERRIDES
+    ═══════════════════════════════════════════ */
+
+    /* Background */
+    body, #home-screen {
+      background: linear-gradient(160deg, #3ecfbf 0%, #6eddb0 55%, #b8f0c8 100%) !important;
+    }
+
+    /* Title */
+    #home-title {
+      font-size: 44px !important;
+      font-weight: 900 !important;
+      color: #0d4f47 !important;
+      text-shadow: 0 2px 0 rgba(255,255,255,0.4), 0 4px 16px rgba(0,0,0,0.08) !important;
+      letter-spacing: 4px !important;
+      margin-bottom: 4px !important;
+      margin-top: -10px !important;
+    }
+
+    #home-subtitle {
+      font-size: 14px !important;
+      color: rgba(13,79,71,0.55) !important;
+      letter-spacing: 3px !important;
+      margin-bottom: 20px !important;
+      font-weight: 400 !important;
+      text-transform: uppercase;
+    }
+
+    /* Challenge info */
+    #challenge-info {
+      font-size: 11px !important;
+      color: rgba(13,79,71,0.5) !important;
+      letter-spacing: 1.5px !important;
+      margin-bottom: 4px !important;
+    }
+
+    /* ── Buttons ── */
+    #wallet-connect {
+      background: #0d4f47 !important;
+      color: #fff !important;
+      border: none !important;
+      font-size: 14px !important;
+      padding: 12px 28px !important;
+      border-radius: 50px !important;
+      letter-spacing: 1.5px !important;
+      box-shadow: 0 4px 18px rgba(13,79,71,0.28) !important;
+      margin-top: 4px !important;
+    }
+    #wallet-connect:hover { background: #0f6157 !important; transform: translateY(-2px) !important; }
+    #wallet-connect.connected {
+      background: rgba(255,255,255,0.85) !important;
+      color: #0d4f47 !important;
+      border: 2px solid rgba(13,79,71,0.2) !important;
+    }
+
+    #weekly-btn {
+      background: rgba(255,255,255,0.82) !important;
+      color: #0d4f47 !important;
+      border: 2px solid rgba(13,79,71,0.18) !important;
+      font-size: 14px !important;
+      padding: 12px 32px !important;
+      letter-spacing: 2px !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
+    }
+    #weekly-btn:hover:not(:disabled) { background: #fff !important; box-shadow: 0 6px 22px rgba(0,0,0,0.12) !important; }
+
+    #create-room-btn {
+      background: #0d4f47 !important;
+      color: #fff !important;
+      border: none !important;
+      font-size: 14px !important;
+      padding: 11px 28px !important;
+      letter-spacing: 2px !important;
+      box-shadow: 0 4px 16px rgba(13,79,71,0.25) !important;
+    }
+    #create-room-btn:hover:not(:disabled) { background: #0f6157 !important; transform: translateY(-2px) !important; }
+
+    /* Room divider */
+    .room-divider {
+      color: rgba(13,79,71,0.4) !important;
+      font-size: 11px !important;
+      letter-spacing: 2px !important;
+      margin: 14px auto 10px !important;
+    }
+
+    /* Join row */
+    #room-code-input {
+      background: rgba(255,255,255,0.8) !important;
+      border: 2px solid rgba(13,79,71,0.15) !important;
+      color: #0d4f47 !important;
+      font-size: 14px !important;
+    }
+    #room-code-input::placeholder { color: rgba(13,79,71,0.35) !important; }
+    #join-room-btn {
+      background: rgba(255,255,255,0.8) !important;
+      color: #0d4f47 !important;
+      border: 2px solid rgba(13,79,71,0.2) !important;
+      font-size: 13px !important;
+    }
+    #join-room-btn:hover:not(:disabled) { background: #fff !important; }
+    #room-status { color: rgba(13,79,71,0.55) !important; }
+
+    /* ── Lobby ── */
+    #lobby-panel {
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.88);
+      border-radius: 16px;
+      padding: 14px 14px 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      margin-top: 14px !important;
+    }
+    .lobby-header-title {
+      color: #0d4f47 !important;
+      font-size: 11px !important;
+      letter-spacing: 2.5px !important;
+    }
+    .lobby-refresh-btn {
+      background: rgba(13,79,71,0.08) !important;
+      border: 1px solid rgba(13,79,71,0.12) !important;
+      color: rgba(13,79,71,0.55) !important;
+    }
+    .lobby-refresh-btn:hover { background: rgba(13,79,71,0.14) !important; color: #0d4f47 !important; }
+    .lobby-row {
+      background: rgba(255,255,255,0.75) !important;
+      border: 1px solid rgba(255,255,255,0.95) !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+    }
+    .lobby-row:hover { background: rgba(255,255,255,0.92) !important; box-shadow: 0 4px 14px rgba(0,0,0,0.09) !important; }
+    .lobby-row-host { color: #0d4f47 !important; }
+    .lobby-lvl-badge {
+      background: rgba(13,79,71,0.1) !important;
+      color: #0d4f47 !important;
+      border: 1px solid rgba(13,79,71,0.2) !important;
+    }
+    .lobby-players-badge { color: rgba(13,79,71,0.45) !important; }
+    .lobby-join-btn {
+      background: #0d4f47 !important;
+      box-shadow: 0 3px 10px rgba(13,79,71,0.3) !important;
+    }
+    .lobby-join-btn:hover { background: #0f6157 !important; box-shadow: 0 4px 14px rgba(13,79,71,0.4) !important; }
+    .lobby-empty {
+      color: rgba(13,79,71,0.4) !important;
+      background: rgba(255,255,255,0.4) !important;
+      border: 1px dashed rgba(13,79,71,0.15) !important;
+    }
+
+    /* ── Score + Leaderboard panels ── */
+    #my-score-panel {
+      background: rgba(255,255,255,0.7) !important;
+      backdrop-filter: blur(14px) !important;
+      border: 1px solid rgba(255,255,255,0.9) !important;
+      border-radius: 16px !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.07) !important;
+    }
+    .ms-title { color: rgba(13,79,71,0.5) !important; }
+    .ms-rank { color: #0d4f47 !important; }
+    .ms-stats { color: rgba(13,79,71,0.7) !important; }
+
+    #gl-leaderboard {
+      background: rgba(255,255,255,0.7) !important;
+      backdrop-filter: blur(14px) !important;
+      border: 1px solid rgba(255,255,255,0.9) !important;
+      border-radius: 16px !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.07) !important;
+    }
+    .gl-title { color: #0d4f47 !important; }
+    .gl-row { color: #1a1a1a !important; border-bottom-color: rgba(0,0,0,0.1) !important; }
+    .gl-badge { color: rgba(0,0,0,0.4) !important; }
+    #gl-status { color: rgba(0,0,0,0.5) !important; }
+
+    /* Level picker */
+    #level-picker { background: rgba(255,255,255,0.5); border-radius: 14px; padding: 12px 16px; }
+    .lvl-btn {
+      background: rgba(255,255,255,0.75) !important;
+      color: #0d4f47 !important;
+      border: 2px solid rgba(13,79,71,0.18) !important;
+    }
+    .lvl-btn:hover { background: #0d4f47 !important; color: #fff !important; border-color: #0d4f47 !important; }
+
+    /* ── Bottom panels side by side ── */
+    #bottom-panels-row {
+      display: flex;
+      flex-direction: row;
+      gap: 14px;
+      align-items: flex-start;
+      justify-content: center;
+      width: 100%;
+      max-width: 680px;
+      margin: 14px auto 0;
+      padding: 0 12px;
+      box-sizing: border-box;
+    }
+    #bottom-panels-row #lobby-panel {
+      flex: 1;
+      min-width: 0;
+      margin-top: 0 !important;
+    }
+    #bottom-panels-row #gl-leaderboard {
+      flex: 1;
+      min-width: 0;
+      display: block !important;
+      margin-top: 0 !important;
+      max-width: none !important;
+    }
+    /* My score above leaderboard inside the row */
+    #bottom-panels-row #my-score-panel {
+      display: none; /* shown via JS, inside right column */
+    }
+
+    @media (max-width: 520px) {
+      #bottom-panels-row { flex-direction: column; }
+    }
+
+    /* ── Room type modal ── */
+    #room-type-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 2100;
+      align-items: center;
+      justify-content: center;
+    }
+    #room-type-modal.active { display: flex; }
+    .rtm-box {
+      background: linear-gradient(160deg, #3abfb3, #5dd68c);
+      border-radius: 20px;
+      padding: 28px 24px 22px;
+      text-align: center;
+      color: white;
+      font-family: monospace;
+      max-width: 300px;
+      width: 90%;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    .rtm-title {
+      font-size: 13px;
+      letter-spacing: 2px;
+      opacity: 0.8;
+      margin-bottom: 6px;
+    }
+    .rtm-sub {
+      font-size: 11px;
+      opacity: 0.65;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+    }
+    .rtm-lvl-row {
+      margin-bottom: 16px;
+      font-size: 12px;
+      opacity: 0.8;
+      letter-spacing: 1px;
+    }
+    .rtm-lvl-row select {
+      background: rgba(255,255,255,0.25);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-family: monospace;
+      font-size: 13px;
+      font-weight: bold;
+      outline: none;
+      margin-left: 6px;
+      cursor: pointer;
+    }
+    .rtm-lvl-row select option { background: #2a7a6e; color: white; }
+    .rtm-btns { display: flex; gap: 10px; justify-content: center; }
+    .rtm-btn {
+      flex: 1;
+      padding: 12px 8px;
+      border-radius: 14px;
+      border: 2px solid rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.15);
+      color: white;
+      font-family: monospace;
+      font-weight: bold;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 1px;
+    }
+    .rtm-btn:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+    .rtm-btn.public { border-color: #ffe082; }
+    .rtm-btn.public:hover { background: rgba(255,224,130,0.25); }
+    .rtm-btn.private { border-color: rgba(255,255,255,0.6); }
+    .rtm-cancel {
+      margin-top: 12px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.55);
+      font-size: 11px;
+      cursor: pointer;
+      font-family: monospace;
+      letter-spacing: 1px;
+    }
+    .rtm-cancel:hover { color: rgba(255,255,255,0.85); }
+  </style>
+</head>
+
+<body>
+  <div id="home-screen">
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+    <div class="cloud cloud3"></div>
+    <div class="cloud cloud4"></div>
+    <div id="home-content">
+      <div id="home-block-container">
+        <svg width="200" height="200" viewBox="0 0 200 200">
+          <!-- Isometric platform tiles -->
+          <polygon points="100,80 140,100 100,120 60,100" fill="#b3e6d9" stroke="#4dd9cc" stroke-width="2" />
+          <polygon points="60,100 100,120 100,140 60,120" fill="#99d9cc" stroke="#4dd9cc" stroke-width="2" />
+          <polygon points="100,120 140,100 140,120 100,140" fill="#80ccbf" stroke="#4dd9cc" stroke-width="2" />
+          <!-- Red block -->
+          <polygon points="100,50 130,65 100,80 70,65" fill="#ff6b6b" />
+          <polygon points="70,65 100,80 100,125 70,110" fill="#ff5252" />
+          <polygon points="100,80 130,65 130,110 100,125" fill="#ff8080" />
+        </svg>
+      </div>
+      <div id="home-title">BLOCK AND HOLE</div>
+      <div id="home-subtitle">Roll the block</div>
+      <div id="wallet-container">
+        <button id="wallet-connect" onclick="connectWallet()">CONNECT WALLET</button>
+        <!-- Removed wallet menu; keep only two buttons on home -->
+      </div>
+      <button id="weekly-btn" onclick="weeklyGameFlow()" disabled>WEEKLY CHALLENGE</button>
+      <div id="challenge-info"></div>
+
+      <!-- Room section -->
+      <div class="room-divider">— or play with friends —</div>
+      <button id="create-room-btn" onclick="showLevelPicker()" disabled>CREATE ROOM</button>
+
+      <!-- Level picker (hidden by default) -->
+      <div id="level-picker" style="display:none;margin:10px 0 6px;text-align:center">
+        <div style="font-size:11px;letter-spacing:2px;color:rgba(0,0,0,0.45);margin-bottom:8px">CHOOSE LEVEL</div>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button class="lvl-btn" onclick="createRoomFlow(1)">1</button>
+          <button class="lvl-btn" onclick="createRoomFlow(2)">2</button>
+          <button class="lvl-btn" onclick="createRoomFlow(3)">3</button>
+          <button class="lvl-btn" onclick="createRoomFlow(4)">4</button>
+          <button class="lvl-btn" onclick="createRoomFlow(5)">5</button>
+          <button class="lvl-btn" onclick="createRoomFlow(6)">6</button>
+        </div>
+        <button onclick="document.getElementById('level-picker').style.display='none'" style="margin-top:8px;background:none;border:none;color:rgba(0,0,0,0.35);font-size:11px;cursor:pointer">cancel</button>
+      </div>
+
+      <div class="join-room-row">
+        <input id="room-code-input" type="text" placeholder="ROOM CODE" maxlength="6" oninput="this.value=this.value.toUpperCase()">
+        <button id="join-room-btn" onclick="joinRoomFlow()" disabled>JOIN</button>
+      </div>
+      <div id="room-status"></div>
+
+      <!-- Bottom two panels side by side -->
+      <div id="bottom-panels-row">
+
+      <!-- Lobby: available rooms -->
+      <div id="lobby-panel">
+        <div class="lobby-header">
+          <div class="lobby-header-left">
+            <div class="lobby-live-dot"></div>
+            <span class="lobby-header-title">OPEN ROOMS</span>
+          </div>
+          <button class="lobby-refresh-btn" onclick="fetchLobby()">↻ refresh</button>
+        </div>
+        <div id="lobby-list">
+          <div class="lobby-empty">No open rooms yet</div>
+        </div>
+      </div>
+      <div id="gl-status"></div>
+      <!-- Right column: my score + leaderboard -->
+      <div style="display:flex;flex-direction:column;flex:1;min-width:0;gap:10px;">
+      <!-- My Score this week -->
+      <div id="my-score-panel">
+        <div class="ms-title">YOUR SCORE THIS WEEK</div>
+        <div class="ms-rank" id="ms-rank">#—</div>
+        <div class="ms-stats" id="ms-stats">— moves · —s</div>
+        <div class="ms-xp" id="ms-xp"></div>
+      </div>
+      <!-- GenLayer Leaderboard -->
+      <div id="gl-leaderboard">
+        <div class="gl-title" id="gl-leaderboard-title">THIS WEEK'S TOP</div>
+        <div id="gl-rows">
+          <div class="gl-row" style="justify-content:center;opacity:0.5">Loading…</div>
+        </div>
+        <div class="gl-badge">Powered by GenLayer · Optimistic Democracy</div>
+      </div>
+      </div><!-- end right column -->
+
+      </div><!-- end bottom-panels-row -->
+    </div>
+  </div>
+  <!-- Room type modal: public / private -->
+  <div id="room-type-modal">
+    <div class="rtm-box">
+      <div class="rtm-title">CREATE A ROOM</div>
+      <div class="rtm-sub">Choose room type and level</div>
+      <div class="rtm-lvl-row">
+        LEVEL
+        <select id="rtm-level-select">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+        </select>
+      </div>
+      <div class="rtm-btns">
+        <button class="rtm-btn public" onclick="createRoomWithType(true)">🌍 PUBLIC<br><span style="font-size:9px;opacity:0.7;font-weight:normal">visible in lobby</span></button>
+        <button class="rtm-btn private" onclick="createRoomWithType(false)">🔒 PRIVATE<br><span style="font-size:9px;opacity:0.7;font-weight:normal">code only</span></button>
+      </div>
+      <button class="rtm-cancel" onclick="document.getElementById('room-type-modal').classList.remove('active')">cancel</button>
+    </div>
+  </div>
+
+  <!-- Room code modal -->
+  <div id="room-code-modal">
+    <div class="rcm-box">
+      <div class="rcm-title">YOUR ROOM CODE</div>
+      <div class="rcm-code" id="rcm-code-display">——</div>
+      <div class="rcm-sub" id="rcm-status">Share this code with your friends</div>
+      <button class="rcm-copy" onclick="copyRoomCode()">COPY CODE</button>
+    </div>
+  </div>
+
+  <!-- Game clouds (hidden initially, shown when game starts) -->
+  <div id="game-clouds" style="display:none;">
+    <div class="cloud" style="width:100px; height:50px; top:50px; left:50px;"></div>
+    <div class="cloud" style="width:120px; height:60px; top:200px; right:60px;"></div>
+    <div class="cloud" style="width:110px; height:55px; bottom:200px; left:40px;"></div>
+    <div class="cloud" style="width:95px; height:48px; bottom:80px; right:70px;"></div>
+    <div class="cloud" style="width:105px; height:52px; top:120px; left:30px;"></div>
+    <div class="cloud" style="width:115px; height:58px; bottom:140px; right:50px;"></div>
+    <div class="cloud" style="width:90px; height:45px; top:300px; left:60px;"></div>
+    <div class="cloud" style="width:100px; height:50px; top:350px; right:55px;"></div>
+  </div>
+  <div id="lives" style="display:none;"></div>
+  <div id="move-counter">Moves: 0 | 0s</div>
+  <button id="restart" onclick="restartGameFlow()" style="display:none;">Restart</button>
+  <!-- Debug Next Map button removed -->
+  <!-- Lightweight loading indicator for mobile resumes/maps -->
+  <div id="map-loading"
+    style="display:none; position:fixed; top:14px; left:50%; transform:translateX(-50%); background:#1f2937; color:#fff; padding:8px 12px; border-radius:12px; font-family:monospace; font-size:14px; box-shadow:0 4px 12px rgba(0,0,0,0.25); z-index:1000;">
+    Loading maps…</div>
+  <div id=level style="display:none;">Round 1</div>
+  <div id="mobile-controls">
+    <div class="controls-row">
+      <button class="arrow-btn" onmousedown="mobileMove('up')"
+        ontouchstart="mobileMove('up'); event.preventDefault()">▲</button>
+    </div>
+    <div class="controls-row">
+      <button class="arrow-btn" onmousedown="mobileMove('left')"
+        ontouchstart="mobileMove('left'); event.preventDefault()">◀</button>
+      <button class="arrow-btn" onmousedown="mobileMove('down')"
+        ontouchstart="mobileMove('down'); event.preventDefault()">▼</button>
+      <button class="arrow-btn" onmousedown="mobileMove('right')"
+        ontouchstart="mobileMove('right'); event.preventDefault()">▶</button>
+    </div>
+  </div>
+  <!-- Lose popup -->
+  <div id="lose-overlay">
+    <div id="lose-modal" role="dialog" aria-labelledby="lose-title" aria-modal="true">
+      <div id="lose-title">You lost</div>
+      <div id="lose-sub">Try again and beat this round!</div>
+      <button id="try-again-btn" onclick="onTryAgain()">Try Again</button>
+    </div>
+  </div>
+  <!-- Challenge Win Modal -->
+  <div id="challenge-win-overlay">
+    <div id="challenge-win-modal" role="dialog" aria-modal="true">
+      <div id="challenge-win-title">Challenge Complete!</div>
+      <div id="challenge-win-stats">Moves: — | Time: —</div>
+      <div id="challenge-win-grade"></div>
+      <div id="challenge-win-verdict"></div>
+      <div id="challenge-win-xp"></div>
+      <div id="challenge-win-gl-status"></div>
+      <div id="challenge-win-leaderboard">
+        <div class="gl-title">THIS WEEK'S TOP</div>
+        <div id="challenge-win-leaderboard-rows">
+          <div class="gl-row" style="justify-content:center;color:rgba(255,255,255,0.5)">Loading…</div>
+        </div>
+        <div class="gl-badge">Powered by GenLayer · Optimistic Democracy</div>
+      </div>
+      <button class="cw-btn" onclick="onChallengeHome()">Home</button>
+    </div>
+  </div>
+  <!-- Win popup -->
+  <div id="win-overlay">
+    <div id="win-modal" role="dialog" aria-labelledby="win-title" aria-modal="true">
+      <div id="win-title">🎉 Congratulations! 🎉</div>
+      <div id="win-sub">You completed all levels!<br>Amazing work, champion!</div>
+      <div id="win-gl-status" style="font-size:12px;color:#4dd9cc;margin:6px 0;font-family:monospace;min-height:16px;">
+      </div>
+      <button class="win-btn" onclick="onPlayAgain()">Play Again</button>
+      <button class="win-btn" onclick="onWinHome()">Home</button>
+    </div>
+  </div>
+  <!-- Load external maps if available (cache-busted) -->
+  <script src="maps/maps.js?v=3"></script>
+  <script>
+    // Map data source control: default to original inline maps
+    // We keep the original maps as inline data, and allow opting into external maps.
+    window.inlineMapData = {
+      1: { layers: [{}, { color: "#e8e8e8", name: "normal", objects: [{ height: 50, id: 1, width: 50, x: -50, y: -50 }, { height: 50, id: 2, width: 50, x: 0, y: -50 }, { height: 50, id: 3, width: 50, x: 50, y: -50 }, { height: 50, id: 4, width: 50, x: -50, y: 0 }, { height: 50, id: 5, width: 50, x: 0, y: 0 }, { height: 50, id: 6, width: 50, x: 50, y: 0 }, { height: 50, id: 7, width: 50, x: -50, y: 50 }, { height: 50, id: 8, width: 50, x: 0, y: 50 }, { height: 50, id: 9, width: 50, x: 50, y: 50 }, { height: 50, id: 10, width: 50, x: 0, y: 100 }, { height: 50, id: 11, width: 50, x: 50, y: 100 }, { height: 50, id: 12, width: 50, x: 100, y: 100 }, { height: 50, id: 13, width: 50, x: 100, y: 0 }, { height: 50, id: 14, width: 50, x: 150, y: 0 }, { height: 50, id: 15, width: 50, x: 200, y: 0 }, { height: 50, id: 16, width: 50, x: 100, y: 50 }, { height: 50, id: 17, width: 50, x: 150, y: 50 }, { height: 50, id: 18, width: 50, x: 200, y: 50 }, { height: 50, id: 19, width: 50, x: 150, y: 100 }, { height: 50, id: 20, width: 50, x: 200, y: 100 }, { height: 50, id: 21, width: 50, x: 200, y: 150 }, { height: 50, id: 22, width: 50, x: 250, y: 50 }, { height: 50, id: 23, width: 50, x: 250, y: 100 }, { height: 50, id: 24, width: 50, x: 250, y: 150 }, { height: 50, id: 25, width: 50, x: 250, y: 200 }, { height: 50, id: 26, width: 50, x: 300, y: 50 }, { height: 50, id: 27, width: 50, x: 300, y: 100 }, { height: 50, id: 28, width: 50, x: 300, y: 200 }, { height: 50, id: 29, width: 50, x: 350, y: 50 }, { height: 50, id: 30, width: 50, x: 350, y: 100 }, { height: 50, id: 31, width: 50, x: 350, y: 150 }, { height: 50, id: 32, width: 50, x: 350, y: 200 }, { height: 50, id: 33, width: 50, x: 400, y: 100 }, { height: 50, id: 34, width: 50, x: 400, y: 150 }] }, { color: "#34ebab", name: "bridge", objects: [] }, { color: "#5599ff", name: "goal", objects: [{ height: 50, id: 35, width: 50, x: 300, y: 150 }] }, { color: "#55aaff", name: "button", objects: [] }, { name: "border", objects: [] }, { name: "weak", objects: [] }] },
+
+      2: { layers: [{}, { color: "#e8e8e8", name: "normal", objects: [{ height: 50, id: 1, width: 50, x: -50, y: -50 }, { height: 50, id: 2, width: 50, x: -50, y: -100 }, { height: 50, id: 3, width: 50, x: -50, y: -150 }, { height: 50, id: 4, width: 50, x: 0, y: -50 }, { height: 50, id: 5, width: 50, x: 0, y: -100 }, { height: 50, id: 6, width: 50, x: 0, y: -150 }, { height: 50, id: 7, width: 50, x: 50, y: -50 }, { height: 50, id: 8, width: 50, x: 50, y: -150 }, { height: 50, id: 9, width: 50, x: 100, y: -50 }, { height: 50, id: 10, width: 50, x: 100, y: -100 }, { height: 50, id: 11, width: 50, x: 100, y: -150 }, { height: 50, id: 12, width: 50, x: -50, y: 0 }, { height: 50, id: 13, width: 50, x: 0, y: 0 }, { height: 50, id: 14, width: 50, x: 50, y: 0 }, { height: 50, id: 15, width: 50, x: 100, y: 0 }, { height: 50, id: 16, width: 50, x: -50, y: 50 }, { height: 50, id: 17, width: 50, x: 0, y: 50 }, { height: 50, id: 18, width: 50, x: 50, y: 50 }, { height: 50, id: 19, width: 50, x: 100, y: 50 }, { height: 50, id: 20, width: 50, x: 250, y: -100 }, { height: 50, id: 21, width: 50, x: 250, y: -150 }, { height: 50, id: 22, width: 50, x: 250, y: -200 }, { height: 50, id: 23, width: 50, x: 300, y: -100 }, { height: 50, id: 24, width: 50, x: 300, y: -150 }, { height: 50, id: 25, width: 50, x: 300, y: -200 }, { height: 50, id: 26, width: 50, x: 350, y: -100 }, { height: 50, id: 27, width: 50, x: 350, y: -200 }, { height: 50, id: 28, width: 50, x: 400, y: -100 }, { height: 50, id: 29, width: 50, x: 400, y: -150 }, { height: 50, id: 30, width: 50, x: 400, y: -200 }, { height: 50, id: 31, width: 50, x: 250, y: -50 }, { height: 50, id: 32, width: 50, x: 300, y: -50 }, { height: 50, id: 33, width: 50, x: 350, y: -50 }, { height: 50, id: 34, width: 50, x: 400, y: -50 }, { height: 50, id: 35, width: 50, x: 250, y: 0 }, { height: 50, id: 36, width: 50, x: 300, y: 0 }, { height: 50, id: 37, width: 50, x: 350, y: 0 }, { height: 50, id: 38, width: 50, x: 400, y: 0 }, { height: 50, id: 39, width: 50, x: 250, y: 50 }, { height: 50, id: 40, width: 50, x: 300, y: 50 }, { height: 50, id: 41, width: 50, x: 350, y: 50 }, { height: 50, id: 42, width: 50, x: 400, y: 50 }, { height: 50, id: 43, width: 50, x: 550, y: -100 }, { height: 50, id: 44, width: 50, x: 550, y: -150 }, { height: 50, id: 45, width: 50, x: 550, y: -200 }, { height: 50, id: 46, width: 50, x: 600, y: -100 }, { height: 50, id: 47, width: 50, x: 600, y: -200 }, { height: 50, id: 48, width: 50, x: 650, y: -100 }, { height: 50, id: 49, width: 50, x: 650, y: -150 }, { height: 50, id: 50, width: 50, x: 650, y: -200 }, { height: 50, id: 51, width: 50, x: 550, y: 0 }, { height: 50, id: 52, width: 50, x: 600, y: 0 }, { height: 50, id: 53, width: 50, x: 650, y: 0 }, { height: 50, id: 54, width: 50, x: 550, y: -50 }, { height: 50, id: 55, width: 50, x: 600, y: -50 }, { height: 50, id: 56, width: 50, x: 650, y: -50 }] }, { color: "#34ebab", name: "bridge", objects: [{ height: 50, id: 57, properties: { id: "bridgeA", startActivated: false }, width: 50, x: 200, y: 0 }, { height: 50, id: 58, properties: { id: "bridgeA", startActivated: false }, width: 50, x: 150, y: 0 }, { height: 50, id: 59, properties: { id: "bridgeB", startActivated: false }, width: 50, x: 500, y: 0 }, { height: 50, id: 60, properties: { id: "bridgeB", startActivated: false }, width: 50, x: 450, y: 0 }] }, { color: "#5599ff", name: "goal", objects: [{ height: 50, id: 61, width: 50, x: 600, y: -150 }] }, { color: "#ff00ff", name: "button", objects: [{ height: 50, id: 62, properties: { activating: "bridgeB", hard: true, type: "on" }, width: 50, x: 350, y: -150 }, { height: 50, id: 63, properties: { activating: "bridgeA", hard: false, type: "on" }, width: 50, x: 50, y: -100 }] }, { name: "border", objects: [] }, { name: "weak", objects: [] }] },
+
+      3: { layers: [{}, { color: "#e8e8e8", name: "normal", objects: [{ height: 50, id: 1, width: 50, x: -50, y: -50 }, { height: 50, id: 2, width: 50, x: 0, y: -50 }, { height: 50, id: 3, width: 50, x: 50, y: -50 }, { height: 50, id: 4, width: 50, x: -50, y: 0 }, { height: 50, id: 5, width: 50, x: 0, y: 0 }, { height: 50, id: 6, width: 50, x: 50, y: 0 }, { height: 50, id: 7, width: 50, x: -50, y: 50 }, { height: 50, id: 8, width: 50, x: 0, y: 50 }, { height: 50, id: 9, width: 50, x: 50, y: 50 }, { height: 50, id: 10, width: 50, x: -50, y: -100 }, { height: 50, id: 11, width: 50, x: 0, y: -100 }, { height: 50, id: 12, width: 50, x: 50, y: -100 }, { height: 50, id: 13, width: 50, x: 100, y: -50 }, { height: 50, id: 14, width: 50, x: 100, y: 0 }, { height: 50, id: 15, width: 50, x: 100, y: 50 }, { height: 50, id: 16, width: 50, x: 100, y: -100 }, { height: 50, id: 17, width: 50, x: 150, y: -50 }, { height: 50, id: 18, width: 50, x: 200, y: -50 }, { height: 50, id: 19, width: 50, x: 250, y: -100 }, { height: 50, id: 20, width: 50, x: 300, y: -100 }, { height: 50, id: 21, width: 50, x: 350, y: -100 }, { height: 50, id: 22, width: 50, x: 250, y: -50 }, { height: 50, id: 23, width: 50, x: 300, y: -50 }, { height: 50, id: 24, width: 50, x: 350, y: -50 }, { height: 50, id: 25, width: 50, x: 250, y: -150 }, { height: 50, id: 26, width: 50, x: 300, y: -150 }, { height: 50, id: 27, width: 50, x: 350, y: -150 }, { height: 50, id: 28, width: 50, x: 400, y: -150 }, { height: 50, id: 29, width: 50, x: 450, y: -150 }, { height: 50, id: 30, width: 50, x: 500, y: -50 }, { height: 50, id: 31, width: 50, x: 550, y: -50 }, { height: 50, id: 32, width: 50, x: 500, y: 0 }, { height: 50, id: 33, width: 50, x: 550, y: 0 }, { height: 50, id: 34, width: 50, x: 500, y: 50 }, { height: 50, id: 35, width: 50, x: 550, y: 50 }, { height: 50, id: 36, width: 50, x: 500, y: -150 }, { height: 50, id: 37, width: 50, x: 550, y: -150 }, { height: 50, id: 38, width: 50, x: 550, y: 100 }, { height: 50, id: 39, width: 50, x: 650, y: 50 }, { height: 50, id: 40, width: 50, x: 650, y: 100 }, { height: 50, id: 41, width: 50, x: 600, y: 100 }, { height: 50, id: 42, width: 50, x: 600, y: 50 }, { height: 50, id: 43, width: 50, x: 650, y: 0 }, { height: 50, id: 44, width: 50, x: 650, y: -50 }, { height: 50, id: 45, width: 50, x: 600, y: -50 }, { height: 50, id: 46, width: 50, x: 500, y: -100 }, { height: 50, id: 47, width: 50, x: 550, y: -100 }] }, { color: "#34ebab", name: "bridge", objects: [] }, { color: "#5599ff", name: "goal", objects: [{ height: 50, id: 48, width: 50, x: 600, y: 0 }] }, { color: "#55aaff", name: "button", objects: [] }, { name: "border", objects: [] }, { name: "weak", objects: [] }] },
+
+      4: { layers: [{}, { color: "#e8e8e8", name: "normal", objects: [{ height: 50, id: 1, width: 50, x: -50, y: 50 }, { height: 50, id: 2, width: 50, x: 0, y: 50 }, { height: 50, id: 3, width: 50, x: 50, y: 50 }, { height: 50, id: 4, width: 50, x: -50, y: 0 }, { height: 50, id: 5, width: 50, x: 0, y: 0 }, { height: 50, id: 6, width: 50, x: 50, y: 0 }, { height: 50, id: 7, width: 50, x: -50, y: -50 }, { height: 50, id: 8, width: 50, x: 0, y: -50 }, { height: 50, id: 9, width: 50, x: 50, y: -50 }, { height: 50, id: 10, width: 50, x: -50, y: -100 }, { height: 50, id: 11, width: 50, x: 0, y: -100 }, { height: 50, id: 12, width: 50, x: 50, y: -100 }, { height: 50, id: 13, width: 50, x: -50, y: -150 }, { height: 50, id: 14, width: 50, x: 0, y: -150 }, { height: 50, id: 15, width: 50, x: 50, y: -150 }, { height: 50, id: 16, width: 50, x: 100, y: -150 }, { height: 50, id: 17, width: 50, x: 100, y: -100 }, { height: 50, id: 18, width: 50, x: 100, y: -50 }, { height: 50, id: 19, width: 50, x: 100, y: 0 }, { height: 50, id: 20, width: 50, x: 150, y: 0 }, { height: 50, id: 21, width: 50, x: 200, y: 0 }, { height: 50, id: 22, width: 50, x: 250, y: 0 }, { height: 50, id: 23, width: 50, x: 300, y: 0 }, { height: 50, id: 24, width: 50, x: 350, y: 0 }, { height: 50, id: 25, width: 50, x: 400, y: 0 }, { height: 50, id: 26, width: 50, x: 350, y: 50 }, { height: 50, id: 27, width: 50, x: 400, y: 50 }, { height: 50, id: 28, width: 50, x: 300, y: 50 }, { height: 50, id: 29, width: 50, x: 250, y: 50 }, { height: 50, id: 30, width: 50, x: 250, y: 100 }, { height: 50, id: 31, width: 50, x: 300, y: 100 }, { height: 50, id: 32, width: 50, x: 350, y: 100 }, { height: 50, id: 33, width: 50, x: 350, y: 150 }, { height: 50, id: 34, width: 50, x: 300, y: 150 }, { height: 50, id: 35, width: 50, x: 250, y: 150 }] }, { color: "#34ebab", name: "bridge", objects: [] }, { color: "#5599ff", name: "goal", objects: [{ height: 50, id: 38, width: 50, x: 300, y: 100 }] }, { color: "#55aaff", name: "button", objects: [] }, { name: "border", objects: [] }, { color: "#f4a460", name: "weak", objects: [] }] },
+
+      5: { layers: [{}, { color: "#e8e8e8", name: "normal", objects: [{ height: 50, id: 1, width: 50, x: 50, y: -50 }, { height: 50, id: 2, width: 50, x: 50, y: 0 }, { height: 50, id: 3, width: 50, x: 50, y: 50 }, { height: 50, id: 4, width: 50, x: 0, y: -50 }, { height: 50, id: 5, width: 50, x: 0, y: 0 }, { height: 50, id: 6, width: 50, x: 0, y: 50 }, { height: 50, id: 7, width: 50, x: -50, y: -50 }, { height: 50, id: 8, width: 50, x: -50, y: 0 }, { height: 50, id: 9, width: 50, x: -50, y: 50 }, { height: 50, id: 10, width: 50, x: -100, y: -50 }, { height: 50, id: 11, width: 50, x: -100, y: 0 }, { height: 50, id: 12, width: 50, x: -150, y: 0 }, { height: 50, id: 13, width: 50, x: -200, y: 0 }, { height: 50, id: 14, width: 50, x: -250, y: 0 }, { height: 50, id: 15, width: 50, x: -300, y: 0 }, { height: 50, id: 16, width: 50, x: -350, y: 0 }, { height: 50, id: 17, width: 50, x: -400, y: 0 }, { height: 50, id: 18, width: 50, x: -450, y: 0 }, { height: 50, id: 19, width: 50, x: -450, y: 50 }, { height: 50, id: 20, width: 50, x: -450, y: 100 }, { height: 50, id: 21, width: 50, x: -500, y: 0 }, { height: 50, id: 22, width: 50, x: -500, y: 50 }, { height: 50, id: 23, width: 50, x: -500, y: 100 }, { height: 50, id: 24, width: 50, x: -550, y: 0 }, { height: 50, id: 25, width: 50, x: -550, y: 50 }, { height: 50, id: 26, width: 50, x: -550, y: 100 }] }, { color: "#34ebab", name: "bridge", objects: [] }, { color: "#5599ff", name: "goal", objects: [{ height: 50, id: 27, width: 50, x: -500, y: 100 }] }, { color: "#55aaff", name: "button", objects: [] }, { name: "border", objects: [] }, { name: "weak", objects: [] }] },
+
+      6: { layers: [{}, { color: "#e8e8e8", name: "normal", objects: [{ height: 50, id: 1, width: 50, x: 0, y: 0 }, { height: 50, id: 2, width: 50, x: 50, y: 0 }, { height: 50, id: 3, width: 50, x: 100, y: 0 }, { height: 50, id: 4, width: 50, x: 150, y: 0 }, { height: 50, id: 5, width: 50, x: 200, y: 0 }, { height: 50, id: 6, width: 50, x: 250, y: 0 }, { height: 50, id: 7, width: 50, x: 200, y: 50 }, { height: 50, id: 8, width: 50, x: 250, y: 50 }, { height: 50, id: 9, width: 50, x: 300, y: 50 }, { height: 50, id: 10, width: 50, x: 200, y: 100 }, { height: 50, id: 11, width: 50, x: 250, y: 100 }, { height: 50, id: 12, width: 50, x: 300, y: 100 }, { height: 50, id: 13, width: 50, x: 300, y: 150 }, { height: 50, id: 14, width: 50, x: 300, y: 200 }, { height: 50, id: 15, width: 50, x: 300, y: 250 }, { height: 50, id: 16, width: 50, x: 350, y: 200 }, { height: 50, id: 17, width: 50, x: 350, y: 250 }, { height: 50, id: 18, width: 50, x: 400, y: 200 }, { height: 50, id: 19, width: 50, x: 400, y: 250 }, { height: 50, id: 20, width: 50, x: 450, y: 150 }, { height: 50, id: 21, width: 50, x: 450, y: 200 }, { height: 50, id: 22, width: 50, x: 450, y: 250 }, { height: 50, id: 23, width: 50, x: 500, y: 150 }, { height: 50, id: 24, width: 50, x: 500, y: 200 }, { height: 50, id: 25, width: 50, x: 500, y: 250 }, { height: 50, id: 26, width: 50, x: 350, y: 300 }, { height: 50, id: 27, width: 50, x: 400, y: 300 }, { height: 50, id: 28, width: 50, x: 450, y: 300 }, { height: 50, id: 29, width: 50, x: 250, y: -150 }, { height: 50, id: 30, width: 50, x: 250, y: -100 }, { height: 50, id: 31, width: 50, x: 250, y: -50 }, { height: 50, id: 32, width: 50, x: 300, y: -150 }, { height: 50, id: 33, width: 50, x: 350, y: -150 }, { height: 50, id: 34, width: 50, x: 400, y: -150 }, { height: 50, id: 35, width: 50, x: 400, y: -100 }, { height: 50, id: 36, width: 50, x: 450, y: -150 }, { height: 50, id: 37, width: 50, x: 450, y: -100 }, { height: 50, id: 38, width: 50, x: 500, y: -150 }, { height: 50, id: 39, width: 50, x: 500, y: -100 }, { height: 50, id: 40, width: 50, x: 400, y: -50 }, { height: 50, id: 41, width: 50, x: 450, y: -50 }, { height: 50, id: 42, width: 50, x: 500, y: -50 }, { height: 50, id: 43, width: 50, x: 550, y: -50 }, { height: 50, id: 44, width: 50, x: 550, y: 0 }, { height: 50, id: 45, width: 50, x: 600, y: -50 }, { height: 50, id: 46, width: 50, x: 600, y: 0 }, { height: 50, id: 47, width: 50, x: 550, y: 50 }, { height: 50, id: 48, width: 50, x: 600, y: 50 }, { height: 50, id: 49, width: 50, x: 600, y: 100 }, { height: 50, id: 50, width: 50, x: 650, y: 100 }, { height: 50, id: 51, width: 50, x: 700, y: 100 }, { height: 50, id: 52, width: 50, x: 650, y: 0 }, { height: 50, id: 53, width: 50, x: 700, y: 0 }, { height: 50, id: 54, width: 50, x: 700, y: 50 }] }, { color: "#34ebab", name: "bridge", objects: [] }, { color: "#5599ff", name: "goal", objects: [{ height: 50, id: 55, width: 50, x: 650, y: 50 }] }, { color: "#55aaff", name: "button", objects: [] }, { name: "border", objects: [] }, { name: "weak", objects: [] }] },
+
+      7: { layers: [{}, { color: "#e8e8e8", name: "normal", objects: [{ height: 50, id: 1, width: 50, x: 0, y: -50 }, { height: 50, id: 2, width: 50, x: 50, y: -50 }, { height: 50, id: 3, width: 50, x: -50, y: -50 }, { height: 50, id: 4, width: 50, x: 0, y: 0 }, { height: 50, id: 5, width: 50, x: 50, y: 0 }, { height: 50, id: 6, width: 50, x: -50, y: 0 }, { height: 50, id: 7, width: 50, x: 0, y: 50 }, { height: 50, id: 8, width: 50, x: 50, y: 50 }, { height: 50, id: 9, width: 50, x: -50, y: 50 }, { height: 50, id: 10, width: 50, x: 0, y: 100 }, { height: 50, id: 11, width: 50, x: 50, y: 100 }, { height: 50, id: 12, width: 50, x: -50, y: 100 }, { height: 50, id: 13, width: 50, x: 0, y: 150 }, { height: 50, id: 14, width: 50, x: 50, y: 150 }, { height: 50, id: 15, width: 50, x: 150, y: 0 }, { height: 50, id: 16, width: 50, x: 200, y: 0 }, { height: 50, id: 17, width: 50, x: 100, y: 0 }, { height: 50, id: 18, width: 50, x: 300, y: 0 }, { height: 50, id: 19, width: 50, x: 350, y: 0 }, { height: 50, id: 20, width: 50, x: 250, y: 0 }, { height: 50, id: 21, width: 50, x: 100, y: 200 }, { height: 50, id: 22, width: 50, x: 150, y: 200 }, { height: 50, id: 23, width: 50, x: 50, y: 200 }, { height: 50, id: 24, width: 50, x: 250, y: 200 }, { height: 50, id: 25, width: 50, x: 300, y: 200 }, { height: 50, id: 26, width: 50, x: 200, y: 200 }, { height: 50, id: 27, width: 50, x: 300, y: 150 }, { height: 50, id: 28, width: 50, x: 300, y: 100 }, { height: 50, id: 29, width: 50, x: 300, y: 50 }, { height: 50, id: 30, width: 50, x: 350, y: 50 }, { height: 50, id: 31, width: 50, x: 350, y: 100 }, { height: 50, id: 32, width: 50, x: 400, y: 100 }, { height: 50, id: 33, width: 50, x: 350, y: -50 }, { height: 50, id: 34, width: 50, x: 350, y: -100 }, { height: 50, id: 35, width: 50, x: 350, y: -150 }, { height: 50, id: 36, width: 50, x: 400, y: -150 }, { height: 50, id: 37, width: 50, x: 400, y: -100 }, { height: 50, id: 38, width: 50, x: 450, y: -150 }, { height: 50, id: 39, width: 50, x: 450, y: -100 }, { height: 50, id: 40, width: 50, x: 500, y: -150 }, { height: 50, id: 41, width: 50, x: 500, y: -100 }, { height: 50, id: 42, width: 50, x: 500, y: -50 }, { height: 50, id: 43, width: 50, x: 550, y: -50 }, { height: 50, id: 44, width: 50, x: 600, y: -50 }, { height: 50, id: 45, width: 50, x: 650, y: -50 }, { height: 50, id: 46, width: 50, x: 550, y: 0 }, { height: 50, id: 47, width: 50, x: 650, y: 0 }, { height: 50, id: 48, width: 50, x: 550, y: 50 }, { height: 50, id: 49, width: 50, x: 600, y: 50 }, { height: 50, id: 50, width: 50, x: 650, y: 50 }, { height: 50, id: 51, width: 50, x: 550, y: 100 }, { height: 50, id: 52, width: 50, x: 600, y: 100 }, { height: 50, id: 53, width: 50, x: 650, y: 100 }] }, { color: "#34ebab", name: "bridge", objects: [{ height: 50, id: 54, properties: { id: "bridgeA", startActivated: false }, width: 50, x: 100, y: 150 }] }, { color: "#5599ff", name: "goal", objects: [{ height: 50, id: 55, width: 50, x: 600, y: 0 }] }, { color: "#ff00ff", name: "button", objects: [{ height: 50, id: 56, properties: { activating: "bridgeA", hard: true, type: "on" }, width: 50, x: 400, y: 50 }] }, { name: "border", objects: [] }, { name: "weak", objects: [] }] },
+
+      8: { layers: [{}, { color: "#e8e8e8", name: "normal", objects: [{ height: 50, id: 1, width: 50, x: -50, y: -50 }, { height: 50, id: 2, width: 50, x: -50, y: 0 }, { height: 50, id: 3, width: 50, x: -50, y: 50 }, { height: 50, id: 4, width: 50, x: 0, y: -50 }, { height: 50, id: 5, width: 50, x: 0, y: 0 }, { height: 50, id: 6, width: 50, x: 0, y: 50 }, { height: 50, id: 7, width: 50, x: 50, y: -50 }, { height: 50, id: 8, width: 50, x: 50, y: 0 }, { height: 50, id: 9, width: 50, x: 50, y: 50 }, { height: 50, id: 10, width: 50, x: 100, y: -50 }, { height: 50, id: 11, width: 50, x: 100, y: 0 }, { height: 50, id: 12, width: 50, x: 100, y: 50 }, { height: 50, id: 13, width: 50, x: 150, y: -50 }, { height: 50, id: 14, width: 50, x: 150, y: 50 }, { height: 50, id: 15, width: 50, x: 200, y: -50 }, { height: 50, id: 16, width: 50, x: 200, y: 0 }, { height: 50, id: 17, width: 50, x: 200, y: 50 }, { height: 50, id: 18, width: 50, x: 400, y: -50 }, { height: 50, id: 19, width: 50, x: 400, y: 0 }, { height: 50, id: 20, width: 50, x: 400, y: 50 }, { height: 50, id: 21, width: 50, x: 450, y: -50 }, { height: 50, id: 22, width: 50, x: 450, y: 0 }, { height: 50, id: 23, width: 50, x: 450, y: 50 }, { height: 50, id: 24, width: 50, x: 500, y: -50 }, { height: 50, id: 25, width: 50, x: 500, y: 0 }, { height: 50, id: 26, width: 50, x: 500, y: 50 }, { height: 50, id: 27, width: 50, x: 400, y: -200 }, { height: 50, id: 28, width: 50, x: 400, y: -150 }, { height: 50, id: 29, width: 50, x: 400, y: -100 }, { height: 50, id: 30, width: 50, x: 450, y: -200 }, { height: 50, id: 31, width: 50, x: 450, y: -150 }, { height: 50, id: 32, width: 50, x: 450, y: -100 }, { height: 50, id: 33, width: 50, x: 500, y: -200 }, { height: 50, id: 34, width: 50, x: 500, y: -150 }, { height: 50, id: 35, width: 50, x: 500, y: -100 }, { height: 50, id: 36, width: 50, x: 400, y: 100 }, { height: 50, id: 37, width: 50, x: 400, y: 150 }, { height: 50, id: 38, width: 50, x: 400, y: 200 }, { height: 50, id: 39, width: 50, x: 450, y: 100 }, { height: 50, id: 40, width: 50, x: 450, y: 150 }, { height: 50, id: 41, width: 50, x: 450, y: 200 }, { height: 50, id: 42, width: 50, x: 500, y: 100 }, { height: 50, id: 43, width: 50, x: 500, y: 150 }, { height: 50, id: 44, width: 50, x: 500, y: 200 }, { height: 50, id: 45, width: 50, x: 550, y: -50 }, { height: 50, id: 46, width: 50, x: 550, y: 0 }, { height: 50, id: 47, width: 50, x: 550, y: 50 }, { height: 50, id: 48, width: 50, x: 600, y: -50 }, { height: 50, id: 49, width: 50, x: 600, y: 50 }, { height: 50, id: 50, width: 50, x: 650, y: -50 }, { height: 50, id: 51, width: 50, x: 650, y: 0 }, { height: 50, id: 52, width: 50, x: 650, y: 50 }] }, { color: "#34ebab", name: "bridge", objects: [{ height: 50, id: 54, properties: { id: "bridgeGap", startActivated: false }, width: 50, x: 250, y: 0 }, { height: 50, id: 55, properties: { id: "bridgeGap", startActivated: false }, width: 50, x: 300, y: 0 }, { height: 50, id: 56, properties: { id: "bridgeGap", startActivated: false }, width: 50, x: 350, y: 0 }] }, { color: "#5599ff", name: "goal", objects: [{ height: 50, id: 53, width: 50, x: 600, y: 0 }] }, { color: "#ff00ff", name: "button", objects: [{ height: 50, id: 57, properties: { activating: "bridgeGap", hard: true, type: "on" }, width: 50, x: 150, y: 0 }] }, { name: "border", objects: [] }, { name: "weak", objects: [] }] },
+
+      9: { layers: [{}, { color: "#e8e8e8", name: "normal", objects: [{ height: 50, id: 1, width: 50, x: -50, y: -50 }, { height: 50, id: 2, width: 50, x: -50, y: 0 }, { height: 50, id: 3, width: 50, x: -50, y: 50 }, { height: 50, id: 4, width: 50, x: 0, y: -50 }, { height: 50, id: 5, width: 50, x: 0, y: 0 }, { height: 50, id: 6, width: 50, x: 0, y: 50 }, { height: 50, id: 7, width: 50, x: 50, y: -50 }, { height: 50, id: 8, width: 50, x: 50, y: 0 }, { height: 50, id: 9, width: 50, x: 50, y: 50 }, { height: 50, id: 10, width: 50, x: 100, y: -50 }, { height: 50, id: 11, width: 50, x: 100, y: 0 }, { height: 50, id: 12, width: 50, x: 100, y: 50 }, { height: 50, id: 39, width: 50, x: 150, y: 0 }, { height: 50, id: 13, width: 50, x: 150, y: 50 }, { height: 50, id: 14, width: 50, x: 200, y: 50 }, { height: 50, id: 15, width: 50, x: 550, y: -50 }, { height: 50, id: 16, width: 50, x: 550, y: 0 }, { height: 50, id: 17, width: 50, x: 550, y: 50 }, { height: 50, id: 18, width: 50, x: 600, y: -50 }, { height: 50, id: 19, width: 50, x: 600, y: 50 }, { height: 50, id: 20, width: 50, x: 250, y: 50 }, { height: 50, id: 21, width: 50, x: 250, y: 100 }, { height: 50, id: 22, width: 50, x: 250, y: 150 }, { height: 50, id: 23, width: 50, x: 300, y: 150 }, { height: 50, id: 24, width: 50, x: 350, y: 150 }, { height: 50, id: 25, width: 50, x: 350, y: 100 }, { height: 50, id: 26, width: 50, x: 350, y: 50 }, { height: 50, id: 27, width: 50, x: 300, y: 50 }, { height: 50, id: 28, width: 50, x: 300, y: 0 }, { height: 50, id: 29, width: 50, x: 300, y: -50 }, { height: 50, id: 30, width: 50, x: 400, y: 50 }, { height: 50, id: 31, width: 50, x: 450, y: 50 }, { height: 50, id: 32, width: 50, x: 500, y: 50 }, { height: 50, id: 33, width: 50, x: 500, y: 0 }, { height: 50, id: 34, width: 50, x: 500, y: -50 }, { height: 50, id: 35, width: 50, x: 650, y: 50 }, { height: 50, id: 36, width: 50, x: 650, y: 0 }, { height: 50, id: 37, width: 50, x: 650, y: -50 }] }, { color: "#34ebab", name: "bridge", objects: [] }, { color: "#5599ff", name: "goal", objects: [{ height: 50, id: 38, width: 50, x: 300, y: 100 }] }, { color: "#55aaff", name: "button", objects: [] }, { name: "border", objects: [] }, { name: "weak", objects: [] }] },
+
+      10: { layers: [{}, { color: "#e8e8e8", name: "normal", objects: [{ height: 50, id: 1, width: 50, x: -50, y: -50 }, { height: 50, id: 2, width: 50, x: -50, y: 0 }, { height: 50, id: 3, width: 50, x: -50, y: 50 }, { height: 50, id: 4, width: 50, x: 0, y: -50 }, { height: 50, id: 5, width: 50, x: 0, y: 0 }, { height: 50, id: 6, width: 50, x: 0, y: 50 }, { height: 50, id: 7, width: 50, x: 0, y: 100 }, { height: 50, id: 8, width: 50, x: 50, y: -50 }, { height: 50, id: 9, width: 50, x: 50, y: 0 }, { height: 50, id: 10, width: 50, x: 50, y: 50 }, { height: 50, id: 11, width: 50, x: 50, y: 100 }, { height: 50, id: 12, width: 50, x: 100, y: -50 }, { height: 50, id: 13, width: 50, x: 100, y: 0 }, { height: 50, id: 14, width: 50, x: 100, y: 50 }, { height: 50, id: 15, width: 50, x: 100, y: 100 }, { height: 50, id: 16, width: 50, x: 100, y: 150 }, { height: 50, id: 1003, width: 50, x: 100, y: 200 }, { height: 50, id: 1004, width: 50, x: 100, y: 250 }, { height: 50, id: 17, width: 50, x: 150, y: -50 }, { height: 50, id: 18, width: 50, x: 200, y: -50 }, { height: 50, id: 19, width: 50, x: 200, y: 0 }, { height: 50, id: 20, width: 50, x: 150, y: 150 }, { height: 50, id: 21, width: 50, x: 150, y: 200 }, { height: 50, id: 22, width: 50, x: 150, y: 250 }, { height: 50, id: 23, width: 50, x: 150, y: 300 }, { height: 50, id: 24, width: 50, x: 150, y: 350 }, { height: 50, id: 25, width: 50, x: 150, y: 400 }, { height: 50, id: 26, width: 50, x: 100, y: 350 }, { height: 50, id: 27, width: 50, x: 100, y: 300 }, { height: 50, id: 28, width: 50, x: 50, y: 400 }, { height: 50, id: 29, width: 50, x: 0, y: 400 }, { height: 50, id: 30, width: 50, x: -50, y: 400 }, { height: 50, id: 31, width: 50, x: -50, y: 350 }, { height: 50, id: 32, width: 50, x: -100, y: 350 }, { height: 50, id: 33, width: 50, x: -150, y: 350 }, { height: 50, id: 34, width: 50, x: -200, y: 350 }, { height: 50, id: 35, width: 50, x: -250, y: 350 }, { height: 50, id: 36, width: 50, x: -250, y: 400 }, { height: 50, id: 1001, width: 50, x: -150, y: 400 }, { height: 50, id: 1002, width: 50, x: -100, y: 400 }, { height: 50, id: 37, width: 50, x: -200, y: 0 }, { height: 50, id: 38, width: 50, x: -350, y: 0 }, { height: 50, id: 39, width: 50, x: -350, y: -50 }, { height: 50, id: 40, width: 50, x: -400, y: -50 }, { height: 50, id: 41, width: 50, x: -450, y: -50 }, { height: 50, id: 42, width: 50, x: -450, y: 0 }, { height: 50, id: 43, width: 50, x: -450, y: 50 }, { height: 50, id: 44, width: 50, x: -400, y: 50 }, { height: 50, id: 45, width: 50, x: -350, y: 50 }] }, { color: "#34ebab", name: "bridge", objects: [{ height: 50, id: 46, properties: { id: "bridgeA", startActivated: false }, width: 50, x: -100, y: 0 }, { height: 50, id: 47, properties: { id: "bridgeA", startActivated: false }, width: 50, x: -150, y: 0 }, { height: 50, id: 48, properties: { id: "bridgeB", startActivated: false }, width: 50, x: -250, y: 0 }, { height: 50, id: 49, properties: { id: "bridgeB", startActivated: false }, width: 50, x: -300, y: 0 }, { height: 50, id: 50, properties: { id: "bridgeA", startActivated: false }, width: 50, x: 150, y: 100 }, { height: 50, id: 51, properties: { id: "bridgeA", startActivated: false }, width: 50, x: 150, y: 50 }] }, { color: "#5599ff", name: "goal", objects: [{ height: 50, id: 52, width: 50, x: -400, y: 0 }] }, { color: "#ff00ff", name: "button", objects: [{ height: 50, id: 53, properties: { activating: "bridgeA", hard: true, type: "on" }, width: 50, x: 100, y: 400 }, { height: 50, id: 54, properties: { activating: "bridgeB", hard: false, type: "on" }, width: 50, x: -200, y: 400 }] }, { name: "border", objects: [] }, { name: "weak", objects: [] }] }
+
+    };
+
+    // If external maps file provided a global `mapData`, save it here
+    window.externalMapData = (typeof mapData !== 'undefined' ? mapData : null)
+    // Selection state: prefer external if present
+    window.useExternalMaps = !!window.externalMapData
+    function setMapSource(useExternal) {
+      window.useExternalMaps = !!useExternal
+      window.mapData = (window.useExternalMaps && window.externalMapData) ? window.externalMapData : window.inlineMapData
+    }
+    // Initialize selection (external if available, else original inline)
+    setMapSource(window.useExternalMaps)
+
+    // Ensure we always have maps available (handles race on script loading)
+    function selectAvailableMaps() {
+      try { window.externalMapData = (typeof mapData !== 'undefined' ? mapData : window.externalMapData || null) } catch (_) { }
+      setMapSource(!!window.externalMapData)
+    }
+
+    async function ensureMapsReady(maxWaitMs = 1500) {
+      const start = Date.now()
+      return new Promise((resolve) => {
+        const check = () => {
+          try { selectAvailableMaps() } catch (_) { }
+          const ok = !!(window.mapData && window.mapData[1])
+          if (ok) return resolve(true)
+          if (Date.now() - start >= maxWaitMs) {
+            // Hard fallback to inline maps if external failed
+            try { setMapSource(false) } catch (_) { }
+            return resolve(!!(window.mapData && window.mapData[1]))
+          }
+          setTimeout(check, 50)
+        }
+        check()
+      })
+    }
+
+    // Rendering quality helpers
+    function computePixelDensity() {
+      const dpr = window.devicePixelRatio || 1
+      const isMobile = window.innerWidth <= 768
+      // Aim for crisper visuals on mobile but cap for stability
+      return isMobile ? Math.min(2, dpr) : dpr
+    }
+    function applyPixelDensity() {
+      try { pixelDensity(computePixelDensity()) } catch (_) { }
+    }
+
+    class Tile {
+      constructor(s) {
+        Object.assign(this, s)
+        if (this.type === 'bridge') {
+          this.key = this.properties.id
+          if (this.properties.startActivated) this.grid.activated[this.key] = true
+        }
+        if (this.type === 'button') {
+          if (this.properties.hard) this.color = "#ff00ff"
+          this.activating = this.properties.activating.split(",")
+        }
+        this.justActivated = false
+      }
+      update() {
+        let g = 50, x = this.x, z = this.y
+        push()
+        translate(x, g + 5, z)
+        let t = this.type, p = this.game.blockor.position
+        let ux = false, uz = false
+        if (x / g === p.x) ux = true
+        if (this.game.blockor.oddRotZ() && x / g === p.x + 1) ux = true
+        if (z / g === p.z) uz = true
+        if (this.game.blockor.oddRotX() && z / g === p.z + 1) uz = true
+        let u = ux && uz, st = this.game.blockor.isStanding()
+
+        // Check bridge activation status first
+        let a = true
+        if (this.type === "bridge") {
+          a = this.grid.activated[this.key]
+        }
+
+        // Count tiles under blockor (including active bridges)
+        if ((t === 'normal' || t === 'goal' || t === 'button') || (t === 'bridge' && a)) {
+          if (u) this.game.blockor.tilesUnder++
+        }
+
+        if (u && t === 'border') this.game.dead = true
+        if (t === 'weak' && u && st) this.game.dead = true
+        if (t === 'goal' && u && st) this.game.win = true
+
+        // Bridge logic: only die if bridge is NOT activated
+        if (this.type === "bridge" && u && !a) {
+          this.game.dead = true
+        }
+
+        // Button activation: trigger when overlapping the tile (pressed),
+        // regardless of orientation (standing or lying). Not by proximity.
+        if (t === 'button' && u) {
+          if (!this.justActivated) {
+            this.justActivated = true
+            if (this.properties.type === 'toggle') {
+              this.activating.forEach(id => this.grid.activated[id] = !this.grid.activated[id])
+            }
+            if (this.properties.type === 'on') {
+              this.activating.forEach(id => this.grid.activated[id] = true)
+            }
+            if (this.properties.type === 'off') {
+              this.activating.forEach(id => this.grid.activated[id] = false)
+            }
+          }
+        }
+        if (!u) this.justActivated = false
+
+        if (t !== 'border' && a) {
+          fill(this.color)
+          box(g, g / 5, g)
+        }
+        pop()
+      }
+    }
+
+    class Blockor {
+      constructor(s) {
+        Object.assign(this, s)
+        if (!this.position) this.position = createVector(0, 0, 0)
+        if (!this.orientation) this.orientation = createVector()
+        this.pressing = new Set()
+      }
+      update() {
+        push()
+        let p = this.position, o = this.orientation
+        let dx = p.x * 50, dy = p.y * 50, dz = p.z * 50
+        if (this.oddRotZ()) {
+          dx = (p.x + 0.5) * 50
+          dy = (p.y + 0.5) * 50
+        } else if (this.oddRotX()) {
+          dz = (p.z + 0.5) * 50
+          dy = (p.y + 0.5) * 50
+        }
+        translate(dx, dy, dz)
+        rotateX(o.x)
+        rotateY(o.y)
+        rotateZ(o.z)
+        fill("#ff4466")
+        box(50, 100, 50)
+        pop()
+      }
+      oddRotZ() { return (this.orientation.z / 90) % 2 }
+      oddRotX() { return (this.orientation.x / 90) % 2 }
+      isStanding() { return this.oddRotX() === this.oddRotZ() }
+      keyCheck() {
+        if (this.game.win || this.game.dead) return
+        if (this.lastKeyFrame === frameCount) {
+          setTimeout(this.keyCheck.bind(this), 1000 / frameRate())
+          return
+        }
+        this.lastKeyFrame = frameCount
+        if (keyIsDown(this.keys.right) && !this.pressing.has(this.keys.right)) {
+          this.pressing.add(this.keys.right)
+          this.moveTo('right')
+        }
+        if (keyIsDown(this.keys.left) && !this.pressing.has(this.keys.left)) {
+          this.pressing.add(this.keys.left)
+          this.moveTo('left')
+        }
+        if (keyIsDown(this.keys.up) && !this.pressing.has(this.keys.up)) {
+          this.pressing.add(this.keys.up)
+          this.moveTo('up')
+        }
+        if (keyIsDown(this.keys.down) && !this.pressing.has(this.keys.down)) {
+          this.pressing.add(this.keys.down)
+          this.moveTo('down')
+        }
+      }
+      keyClear() { this.pressing.delete(keyCode) }
+      moveTo(d) {
+        if (window.weeklyMode || window.roomMode) {
+          window.moveCount = (window.moveCount || 0) + 1
+          updateMoveHUD()
+        }
+        let o = this.orientation, p = this.position
+        if (d === 'right') {
+          if (this.oddRotX()) p.x += 1
+          else {
+            o.z -= 90
+            p.x += this.oddRotZ() ? 1 : 2
+          }
+        }
+        if (d === 'left') {
+          if (this.oddRotX()) p.x -= 1
+          else {
+            o.z += 90
+            p.x -= this.oddRotZ() ? 2 : 1
+          }
+        }
+        if (d === 'up') {
+          if (this.oddRotZ()) p.z -= 1
+          else {
+            o.x -= 90
+            p.z -= this.oddRotX() ? 2 : 1
+          }
+        }
+        if (d === 'down') {
+          if (this.oddRotZ()) p.z += 1
+          else {
+            o.x += 90
+            p.z += this.oddRotX() ? 1 : 2
+          }
+        }
+      }
+    }
+
+    class Grid {
+      constructor(s) {
+        Object.assign(this, s)
+        this.activated = {}
+        this.tiles = {}
+        let minX = 1e9, maxX = 0, minY = 1e9, maxY = 0
+        if (!window.mapData || !window.mapData[this.game.levelN]) return
+        window.mapData[this.game.levelN].layers.forEach((l, i) => {
+          if (i === 0 || !l.objects) return
+          l.objects.forEach(t => {
+            if (t.x < minX) minX = t.x
+            if (t.x > maxX) maxX = t.x
+            if (t.y < minY) minY = t.y
+            if (t.y > maxY) maxY = t.y
+            t.color = l.color
+            t.type = l.name
+            t.game = this.game
+            t.grid = this
+            if (!t.properties) t.properties = {}
+            this.tiles[t.id] = new Tile(t)
+          })
+        })
+        this.center = createVector((minX + maxX) / 2, (minY + maxY) / 2)
+      }
+      update() {
+        for (let id in this.tiles) this.tiles[id].update()
+      }
+    }
+
+    class Stage {
+      constructor(s) {
+        Object.assign(this, s)
+        this.endTimeout = 10
+        this.camRotX = -60  // Steeper angle for more top-down view
+        this.camRotY = 0    // No rotation
+        this.camRotZ = 0
+        this.isDragging = false
+        this.lastMouseX = 0
+        this.lastMouseY = 0
+        this.zoomLevel = 1.0
+
+        // Detect if mobile
+        this.isMobile = window.innerWidth <= 768
+      }
+      update() {
+        scale(this.scale * this.zoomLevel)
+        if (this.game.win) {
+          if (this.endTimeout) {
+            this.endTimeout--
+            background('#4a8fff')
+          } else {
+            this.game.lastFrame = true
+            if (window.weeklyMode || window.roomMode) {
+              showChallengeWinModal()
+            } else {
+              const maxLevel = (window.mapData && Object.keys(window.mapData).length) || 6
+              if (this.game.levelN < maxLevel) {
+                setup(this.game.levelN + 1)
+              } else {
+                showWinModal()
+              }
+            }
+          }
+        }
+        else if (this.game.dead) {
+          if (this.endTimeout) {
+            this.endTimeout--
+            background('#8b3a62')
+          } else {
+            // Handle life loss and fee gating when out of hearts
+            this.game.lastFrame = true
+            handleDeath(this.game.levelN)
+          }
+        }
+        else {
+          // Make the canvas transparent to reveal the CSS gradient
+          clear();
+        }
+
+        ambientLight(100, 100, 120)
+        directionalLight(255, 255, 255, 0.5, 1, -0.5)
+        directionalLight(200, 200, 230, -0.5, -0.5, -1)
+
+        rotateX(this.camRotX)
+        rotateY(this.camRotY)
+        rotateZ(this.camRotZ)
+
+        // Same zoom for both mobile and desktop
+        let zoom = -350
+        let yOffset = 600
+        translate(-this.game.grid.center.x, yOffset, -this.game.grid.center.y + zoom)
+      }
+
+      handleMouseDrag(dx, dy) {
+        this.camRotY += dx * 0.3
+        this.camRotX += dy * 0.3
+        this.camRotX = constrain(this.camRotX, -80, -10)
+      }
+
+      handleZoom(delta) {
+        this.zoomLevel += delta * 0.1
+        this.zoomLevel = constrain(this.zoomLevel, 0.5, 3.0)
+      }
+    }
+
+    class Game {
+      constructor(s) {
+        Object.assign(this, s)
+        this.grid = new Grid({ game: this })
+        this.stage = new Stage({
+          game: this,
+          scale: min(height, width) / 300
+        })
+        this.blockor = new Blockor({
+          keys: { right: 39, left: 37, up: 38, down: 40 },
+          game: this
+        })
+        // Reset restart label and show "Round N" below it
+        document.getElementById("restart").innerText = "Restart"
+        document.getElementById("level").innerText = `Round ${this.levelN}`
+      }
+      update() {
+        if (this.lastFrame) return
+        this.stage.update()
+        this.blockor.tilesUnder = 0
+        this.grid.update()
+        if (frameCount > 2) {
+          this.blockor.update()
+          let st = this.blockor.isStanding()
+          if (st && this.blockor.tilesUnder < 1) this.dead = true
+          if (!st && this.blockor.tilesUnder < 2) this.dead = true
+        }
+      }
+    }
+
+    let game
+
+    function startGame() {
+      document.getElementById('home-screen').classList.add('hidden')
+      document.getElementById('restart').style.display = 'block'
+      // Show level label below the restart button
+      document.getElementById('level').style.display = 'block'
+      // Show lives HUD
+      document.getElementById('lives').style.display = 'block'
+      setup(1)
+      // Ensure draw loop resumes when starting the game
+      loop()
+    }
+
+    function goHome() {
+      window.weeklyMode = false
+      window.moveCount = 0
+      clearInterval(window._countdownInterval)
+      document.getElementById('home-screen').classList.remove('hidden')
+      document.getElementById('restart').style.display = 'none'
+      document.getElementById('level').style.display = 'none'
+      document.getElementById('lives').style.display = 'none'
+      document.getElementById('move-counter').style.display = 'none'
+      noLoop()
+    }
+
+    function setup(levelN) {
+      if (!levelN) return  // Don't auto-start
+      frameCount = 0
+      // Apply tuned pixel density for crisper visuals on mobile
+      applyPixelDensity()
+      const getViewportSize = () => ({
+        w: Math.floor((window.visualViewport && window.visualViewport.width) || window.innerWidth || windowWidth),
+        h: Math.floor((window.visualViewport && window.visualViewport.height) || window.innerHeight || windowHeight)
+      })
+      const { w, h } = getViewportSize()
+      const renderer = createCanvas(w, h, WEBGL)
+      // Enable alpha channel so the canvas can be transparent
+      setAttributes('alpha', true)
+      // Ensure smoothing for edges
+      try { setAttributes('antialias', true) } catch (_) { }
+      angleMode(DEGREES)
+      game = new Game({
+        levelN: levelN || 1
+      })
+      // Expose game globally for UI/debug handlers
+      try { window.game = game } catch (_) { }
+      draw = game.update.bind(game)
+      keyPressed = game.blockor.keyCheck.bind(game.blockor)
+      keyReleased = game.blockor.keyClear.bind(game.blockor)
+
+      // Attach mobile resume/context handlers once
+      try {
+        if (!window._resumeHandlersMounted) {
+          window._resumeHandlersMounted = true
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              try { applyPixelDensity() } catch (_) { }
+              try { document.getElementById('map-loading').style.display = 'block' } catch (_) { }
+              ensureMapsReady().then(() => {
+                try { document.getElementById('map-loading').style.display = 'none' } catch (_) { }
+                if (!window.game || !window.game.grid || !window.game.grid.center) {
+                  try { setup((window.game && window.game.levelN) ? window.game.levelN : 1) } catch (_) { }
+                }
+                try { loop() } catch (_) { }
+              })
+            } else {
+              try { noLoop() } catch (_) { }
+            }
+          })
+          // Resize and orientation handlers to keep canvas matching visual viewport
+          const resizeCanvasToViewport = () => {
+            try {
+              const { w: rw, h: rh } = getViewportSize()
+              resizeCanvas(rw, rh)
+              applyPixelDensity()
+            } catch (_) { }
+          }
+          window.addEventListener('resize', () => resizeCanvasToViewport())
+          window.addEventListener('orientationchange', () => setTimeout(resizeCanvasToViewport, 300))
+        }
+        // WebGL context lost/restored handlers
+        const canvasEl = (renderer && renderer.elt) || document.querySelector('canvas')
+        if (canvasEl && !canvasEl._ctxHandlers) {
+          canvasEl._ctxHandlers = true
+          canvasEl.addEventListener('webglcontextlost', (e) => {
+            try { e.preventDefault() } catch (_) { }
+            window._webglLost = true
+            try { document.getElementById('map-loading').style.display = 'block' } catch (_) { }
+          }, false)
+          canvasEl.addEventListener('webglcontextrestored', () => {
+            window._webglLost = false
+            try { document.getElementById('map-loading').style.display = 'none' } catch (_) { }
+            try { applyPixelDensity() } catch (_) { }
+            try { setup((window.game && window.game.levelN) ? window.game.levelN : 1) } catch (_) { }
+            try { loop() } catch (_) { }
+          }, false)
+        }
+      } catch (_) { }
+    }
+
+    // Win popup helpers
+    function showWinModal() {
+      try {
+        const overlay = document.getElementById('win-overlay')
+        overlay && (overlay.style.display = 'block')
+        // Submit score to GenLayer leaderboard
+        const maxLevel = (window.mapData && Object.keys(window.mapData).length) || 10
+        if (typeof window.submitGenLayerScore === 'function') {
+          window.submitGenLayerScore(maxLevel)
+        }
+      } catch (_) { }
+    }
+
+    function hideWinModal() {
+      try {
+        const overlay = document.getElementById('win-overlay')
+        overlay && (overlay.style.display = 'none')
+      } catch (_) { }
+    }
+
+    // ===== Weekly Challenge helpers =====
+    const CHALLENGE_TIME_LIMIT = 300 // 5 minutes countdown
+
+    function getWeekNumber() {
+      const epoch = 1704067200000 // 2024-01-01 UTC ms
+      return Math.floor((Date.now() - epoch) / (7 * 24 * 60 * 60 * 1000))
+    }
+
+    // Display offset: hide internal week number, show friendly "Week N" from launch
+    const WEEK_DISPLAY_OFFSET = getWeekNumber()
+    function getDisplayWeek(week) {
+      return week - WEEK_DISPLAY_OFFSET + 1
+    }
+
+    function getChallengeLevel(week) {
+      return (week % 10) + 1
+    }
+
+    function updateMoveHUD() {
+      const el = document.getElementById('move-counter')
+      if (!el || !window.weeklyMode) return
+      const moves = window.moveCount || 0
+      const remaining = Math.max(0, CHALLENGE_TIME_LIMIT - Math.round((Date.now() - (window.challengeStartTime || Date.now())) / 1000))
+      const m = Math.floor(remaining / 60)
+      const s = remaining % 60
+      el.textContent = `Moves: ${moves}  |  ${m}:${s.toString().padStart(2, '0')}`
+      if (remaining === 0 && window.weeklyMode) {
+        // Time's up — timeout
+        clearInterval(window._countdownInterval)
+        window.weeklyMode = false
+        alert('Time is up! No XP this week. Try again next week.')
+        goHome()
+      }
+    }
+
+    function startCountdown() {
+      clearInterval(window._countdownInterval)
+      window._countdownInterval = setInterval(updateMoveHUD, 1000)
+    }
+
+    function showChallengeWinModal() {
+      clearInterval(window._countdownInterval)
+      const elapsed = Math.round((Date.now() - (window.challengeStartTime || Date.now())) / 1000)
+      const moves = window.moveCount || 0
+      const statsEl = document.getElementById('challenge-win-stats')
+      const gradeEl = document.getElementById('challenge-win-grade')
+      const verdictEl = document.getElementById('challenge-win-verdict')
+      const xpEl = document.getElementById('challenge-win-xp')
+      if (statsEl) statsEl.textContent = `Moves: ${moves}  |  Time: ${elapsed}s`
+      if (gradeEl) gradeEl.innerHTML = ''
+      if (verdictEl) verdictEl.innerHTML = ''
+      if (xpEl) xpEl.innerHTML = `<span class="ai-judging">🤖 GenLayer AI is judging your performance...</span>`
+      const overlay = document.getElementById('challenge-win-overlay')
+      if (overlay) overlay.classList.add('active')
+      // Lock Home button until AI reveals grade
+      if (typeof _setHomeBtn === 'function') _setHomeBtn(false)
+      document.getElementById('move-counter').style.display = 'none'
+      // Submit to GenLayer — AI determines grade + XP
+      if (window.roomMode && window.currentRoomId) {
+        // Show my score immediately from memory (grade pending AI)
+        const myAddr = window.walletState?.address || 'you'
+        if (!window._roomScores) window._roomScores = {}
+        window._roomScores[myAddr] = { addr: myAddr, moves, time: elapsed, grade: '...', xp: 0 }
+        if (typeof _renderRoomScoresFromMemory === 'function') _renderRoomScoresFromMemory()
+        if (typeof window.submitRoomScore === 'function') window.submitRoomScore(moves, elapsed)
+      } else if (typeof window.submitWeeklyScore === 'function') {
+        window.submitWeeklyScore(moves, elapsed)
+        const week = window.challengeWeek || getWeekNumber()
+        if (typeof window.loadWeeklyLeaderboard === 'function') window.loadWeeklyLeaderboard(week)
+      }
+    }
+
+    function onChallengeHome() {
+      const overlay = document.getElementById('challenge-win-overlay')
+      if (overlay) overlay.classList.remove('active')
+      // Reset room state
+      window._roomScores = {}
+      window.roomMode = false
+      window.currentRoomId = null
+      // Reset leaderboard title back to weekly
+      const titleEl = document.getElementById('gl-leaderboard-title')
+      if (titleEl) titleEl.textContent = "THIS WEEK'S TOP"
+      goHome()
+      if (typeof window.loadWeeklyLeaderboard === 'function') {
+        window.loadWeeklyLeaderboard(getWeekNumber())
+      }
+    }
+
+    function onPlayAgain() {
+      hideWinModal()
+      try {
+        // Reset to level 1 and refill lives
+        initLives(5)
+        setup(1)
+        loop()
+      } catch (_) { }
+    }
+
+    function onWinHome() {
+      hideWinModal()
+      try {
+        goHome()
+      } catch (_) { }
+    }
+
+    // Lose popup helpers
+    function showLoseModal() {
+      try {
+        const overlay = document.getElementById('lose-overlay')
+        const sub = document.getElementById('lose-sub')
+        const lives = (typeof window.lives === 'number') ? window.lives : 0
+        if (sub) sub.textContent = `Try again and beat this round! (♥ ${lives} left)`
+        overlay && (overlay.style.display = 'block')
+      } catch (_) { }
+    }
+
+    function hideLoseModal() {
+      try { const overlay = document.getElementById('lose-overlay'); overlay && (overlay.style.display = 'none') } catch (_) { }
+    }
+
+    function onTryAgain() {
+      hideLoseModal()
+      try {
+        const level = (window?.game?.levelN) || 1
+        refillLivesAndRestart(level)
+      } catch (_) { }
+    }
+
+    function mousePressed() {
+      // Mouse camera control disabled
+    }
+
+    function mouseReleased() {
+      // Mouse camera control disabled
+    }
+
+    function mouseDragged() {
+      // Mouse camera control disabled
+    }
+
+    function mobileMove(direction) {
+      if (game && game.blockor && !game.win && !game.dead) {
+        game.blockor.moveTo(direction)
+      }
+    }
+
+    function mobileStop() {
+      // Stop action when touch ends
+    }
+  </script>
+  <script>
+    const walletState = {
+      provider: null,
+      address: null,
+      connected: false,
+      inFlight: false,
+      handlers: { accountsChanged: null, disconnect: null }
+    }
+    window.walletState = walletState
+    async function initWallet() {
+      walletState.provider = window.ethereum || null
+      const startBtn = document.getElementById('start-btn')
+      const statusEl = document.getElementById('wallet-status')
+
+      if (!statusEl || !startBtn) return
+
+      const weeklyBtn = document.getElementById('weekly-btn')
+      startBtn.disabled = true
+      startBtn.classList.remove('connected')
+      if (weeklyBtn) weeklyBtn.disabled = true
+
+      if (!walletState.provider) return
+
+      // Auto-connect if already authorized
+      try {
+        const accounts = await walletState.provider.request?.({ method: 'eth_accounts' })
+        if (accounts && accounts.length) updateWalletAddress(accounts[0])
+      } catch (_) { }
+
+      // React to account changes
+      if (walletState.provider.on) {
+        // Remove any prior handlers to avoid duplicate events
+        try {
+          if (walletState.handlers.accountsChanged && walletState.provider.off) {
+            walletState.provider.off('accountsChanged', walletState.handlers.accountsChanged)
+          } else if (walletState.handlers.accountsChanged && walletState.provider.removeListener) {
+            walletState.provider.removeListener('accountsChanged', walletState.handlers.accountsChanged)
+          }
+          if (walletState.handlers.disconnect && walletState.provider.off) {
+            walletState.provider.off('disconnect', walletState.handlers.disconnect)
+          } else if (walletState.handlers.disconnect && walletState.provider.removeListener) {
+            walletState.provider.removeListener('disconnect', walletState.handlers.disconnect)
+          }
+        } catch (_) { }
+        const onAcc = (accounts) => {
+          updateWalletAddress(accounts && accounts[0] ? accounts[0] : null)
+        }
+        const onDisc = () => { updateWalletAddress(null) }
+        walletState.handlers.accountsChanged = onAcc
+        walletState.handlers.disconnect = onDisc
+        walletState.provider.on('accountsChanged', onAcc)
+        walletState.provider.on('disconnect', onDisc)
+      }
+    }
+
+    function shortAddress(addr) {
+      if (!addr) return ''
+      return addr.slice(0, 6) + '...' + addr.slice(-4)
+    }
+
+    function updateWalletAddress(addr) {
+      const startBtn = document.getElementById('start-btn')
+      const connectBtn = document.getElementById('wallet-connect')
+      const container = document.getElementById('wallet-container')
+      walletState.address = addr
+      walletState.connected = !!addr
+      if (addr && typeof window.loadMyScore === 'function') window.loadMyScore(addr)
+      const weeklyBtn = document.getElementById('weekly-btn')
+      if (startBtn) {
+        if (walletState.connected) {
+          startBtn.classList.add('connected')
+          startBtn.disabled = false
+        } else {
+          startBtn.classList.remove('connected')
+          startBtn.disabled = true
+        }
+      }
+      if (weeklyBtn) weeklyBtn.disabled = !walletState.connected
+      if (typeof window._updateRoomBtns === 'function') window._updateRoomBtns(walletState.connected)
+      // Update the wallet connect button label and state
+      if (connectBtn) {
+        if (walletState.connected) {
+          // Show address; enable hover-to-disconnect behavior
+          connectBtn.textContent = 'CONNECTED: ' + shortAddress(walletState.address)
+          connectBtn.classList.add('connected')
+          connectBtn.disabled = false
+          connectBtn.dataset.mode = 'connected'
+          connectBtn.onmouseenter = () => {
+            connectBtn.dataset.mode = 'disconnect'
+            connectBtn.textContent = 'Disconnect Wallet'
+          }
+          connectBtn.onmouseleave = () => {
+            connectBtn.dataset.mode = 'connected'
+            connectBtn.textContent = 'CONNECTED: ' + shortAddress(walletState.address)
+          }
+          connectBtn.onclick = () => {
+            if (connectBtn.dataset.mode === 'disconnect') disconnectWallet()
+          }
+          if (container) container.classList.add('connected')
+        } else {
+          connectBtn.textContent = 'CONNECT WALLET'
+          connectBtn.classList.remove('connected')
+          connectBtn.disabled = false
+          // When disconnected, clicking connects
+          connectBtn.onclick = connectWallet
+          connectBtn.onmouseenter = null
+          connectBtn.onmouseleave = null
+          connectBtn.dataset.mode = 'connect'
+          if (container) container.classList.remove('connected')
+        }
+      }
+    }
+
+    async function ensureWalletConnected() {
+      const statusEl = document.getElementById('wallet-status')
+      if (!walletState.provider) {
+        statusEl && (statusEl.textContent = 'Wallet required — not available')
+        return false
+      }
+      if (walletState.connected) return true
+      if (walletState.inFlight) {
+        // Wait briefly for any ongoing connection to complete
+        await new Promise((resolve) => {
+          let tries = 0
+          const tick = () => {
+            if (!walletState.inFlight) return resolve()
+            tries += 1
+            if (tries > 100) return resolve() // ~2s max wait
+            setTimeout(tick, 20)
+          }
+          tick()
+        })
+        return walletState.connected
+      }
+      walletState.inFlight = true
+      const connectBtn = document.getElementById('wallet-connect')
+      const startBtn = document.getElementById('start-btn')
+      try {
+        connectBtn && (connectBtn.disabled = true)
+        startBtn && (startBtn.disabled = true)
+        const accounts = await walletState.provider.request({ method: 'eth_requestAccounts' })
+        updateWalletAddress(accounts && accounts[0] ? accounts[0] : null)
+        return walletState.connected
+      } catch (err) {
+        statusEl && (statusEl.textContent = 'Connect failed: ' + (err?.message || 'Unknown error'))
+        return false
+      } finally {
+        walletState.inFlight = false
+        // Keep connect button disabled when connected; re-enable otherwise
+        if (connectBtn) connectBtn.disabled = false
+        if (startBtn) startBtn.disabled = !walletState.connected
+      }
+    }
+
+    async function connectWallet() {
+      const ok = await ensureWalletConnected()
+      return ok
+    }
+
+    // Lives HUD helpers
+    function renderLives() {
+      const container = document.getElementById('lives')
+      if (!container) return
+      const total = 5
+      const lives = (typeof window.lives === 'number') ? window.lives : 0
+      let html = ''
+      for (let i = 0; i < total; i++) {
+        const cls = i < lives ? 'heart' : 'heart lost'
+        html += `<span class="${cls}">♥</span>`
+      }
+      container.innerHTML = html
+    }
+
+    function initLives(count) {
+      window.lives = count
+      document.getElementById('lives').style.display = 'block'
+      renderLives()
+    }
+
+    async function refillLivesAndRestart(level) {
+      try { document.getElementById('map-loading').style.display = 'block' } catch (_) { }
+      await ensureMapsReady()
+      initLives(5)
+      setup(level)
+      try { document.getElementById('map-loading').style.display = 'none' } catch (_) { }
+      try { loop() } catch (e) { }
+    }
+
+    function handleDeath(level) {
+      if (typeof window.lives !== 'number') {
+        window.lives = 5
+      }
+      // Lose one heart on death
+      if (window.lives > 0) {
+        window.lives -= 1
+        renderLives()
+      }
+      // If hearts remain, restart level; otherwise, require fee
+      if (window.lives > 0) {
+        // Immediate restart while hearts remain
+        setup(level)
+        try { loop() } catch (e) { }
+      } else {
+        // Hearts exhausted: show lose modal to try again
+        showLoseModal()
+      }
+    }
+
+    // Start Game flow
+    async function startGameFlow() {
+      try { document.getElementById('map-loading').style.display = 'block' } catch (_) { }
+      await ensureMapsReady()
+      initLives(5)
+      startGame()
+      try { document.getElementById('map-loading').style.display = 'none' } catch (_) { }
+    }
+
+    // Weekly Challenge flow
+    async function weeklyGameFlow() {
+      const week = getWeekNumber()
+      const level = getChallengeLevel(week)
+      const infoEl = document.getElementById('challenge-info')
+
+      // Check if already played this week (via GenLayer contract)
+      if (window.glClient && window.GL_CONTRACT_ADDRESS && walletState?.address) {
+        try {
+          const played = await window.glClient.readContract({
+            address: window.GL_CONTRACT_ADDRESS,
+            functionName: 'has_played_this_week',
+            args: [walletState.address, week],
+          })
+          if (played) {
+            if (infoEl) {
+              infoEl.textContent = `🔒 Already played this week. Come back next week!`
+              infoEl.style.display = 'block'
+              infoEl.style.color = '#1a6e4a'
+              infoEl.style.fontWeight = 'bold'
+              infoEl.style.fontSize = '14px'
+              infoEl.style.background = 'rgba(255,255,255,0.5)'
+              infoEl.style.padding = '8px 16px'
+              infoEl.style.borderRadius = '10px'
+              infoEl.style.marginTop = '8px'
+            }
+            return
+          }
+        } catch (e) { }
+      }
+
+      // No wallet needed for challenge — free to play
+      if (infoEl) infoEl.style.display = 'none'
+      window.weeklyMode = true
+      window.moveCount = 0
+      window.challengeStartTime = Date.now()
+      window.challengeWeek = week
+      window.challengeLevel = level
+
+      document.getElementById('home-screen').classList.add('hidden')
+      document.getElementById('restart').style.display = 'block'
+      document.getElementById('level').style.display = 'block'
+      document.getElementById('lives').style.display = 'block'
+      document.getElementById('move-counter').style.display = 'block'
+
+      try { document.getElementById('map-loading').style.display = 'block' } catch (_) { }
+      await ensureMapsReady()
+      initLives(5)
+      setup(level)
+      try { document.getElementById('map-loading').style.display = 'none' } catch (_) { }
+      startCountdown()
+      try { loop() } catch (e) { }
+    }
+
+    // Restart flow: return to spawn of current map.
+    async function restartGameFlow() {
+      const level = window?.game?.levelN
+      if (!level) return
+      if (typeof window.lives !== 'number') window.lives = 5
+      try { document.getElementById('map-loading').style.display = 'block' } catch (_) { }
+      await ensureMapsReady()
+      setup(level)
+      try { document.getElementById('map-loading').style.display = 'none' } catch (_) { }
+      try { loop() } catch (_) { }
+      try { renderLives() } catch (_) { }
+    }
+
+    // Debug: start game without wallet/fee checks
+    function debugStart() {
+      try { initLives(5) } catch (_) { window.lives = 5 }
+      startGame()
+    }
+
+    // Start game at a specific level (no wallet gating)
+    function startGameAt(levelN) {
+      document.getElementById('home-screen').classList.add('hidden')
+      document.getElementById('restart').style.display = 'block'
+      document.getElementById('level').style.display = 'block'
+      document.getElementById('lives').style.display = 'block'
+      try { document.getElementById('map-loading').style.display = 'block' } catch (_) { }
+      ensureMapsReady().then(() => {
+        setup(levelN || 1)
+        try { document.getElementById('map-loading').style.display = 'none' } catch (_) { }
+        try { loop() } catch (_) { }
+      })
+    }
+
+    // Debug: jump straight to Map N (1–10)
+    function debugStartMap() {
+      let n = parseInt(document.getElementById('map-number')?.value, 10)
+      if (!Number.isFinite(n)) n = 1
+      n = Math.max(1, Math.min(10, n))
+      const has = !!(window.mapData && window.mapData[n])
+      if (!has) {
+        const maxAvail = window.mapData ? Object.keys(window.mapData).length : 0
+        window.alert('Map ' + n + ' mashi available. Available: 1–' + maxAvail)
+        return
+      }
+      try { initLives(5) } catch (_) { window.lives = 5 }
+      startGameAt(n)
+    }
+
+    // In-game: skip to next available map (DEBUG)
+    function debugSkipNextMap() {
+      const current = (window?.game?.levelN) || 1
+      const maxAvail = window.mapData ? Object.keys(window.mapData).length : 0
+      if (!maxAvail) return
+      if (current >= maxAvail) {
+        window.alert('Wselti l-akhir: Map ' + current + ' mn ' + maxAvail)
+        return
+      }
+      try { document.getElementById('map-loading').style.display = 'block' } catch (_) { }
+      ensureMapsReady().then(() => {
+        setup(current + 1)
+        try { document.getElementById('map-loading').style.display = 'none' } catch (_) { }
+        try { loop() } catch (_) { }
+      })
+    }
+
+    // Initialize map source toggle: default unchecked (inline maps)
+    function initMapToggle() {
+      const el = document.getElementById('use-external-maps')
+      if (!el) return
+      // Reflect current selection
+      try { el.checked = !!window.useExternalMaps } catch (_) { el.checked = false }
+      el.addEventListener('change', (e) => {
+        const useExt = !!e.target.checked
+        setMapSource(useExt)
+        // Update map number input max to available maps
+        try {
+          const maxAvail = window.mapData ? Object.keys(window.mapData).length : 0
+          const input = document.getElementById('map-number')
+          if (input) input.max = Math.max(1, maxAvail)
+        } catch (_) { }
+        // Offer to restart current level to apply change immediately
+        if (window.game) {
+          const level = window.game.levelN || 1
+          const ok = window.confirm('Bdlti source dyal maps. N3awd nbdaw had level daba?')
+          if (ok) {
+            setup(level)
+            try { loop() } catch (_) { }
+          }
+        }
+      })
+    }
+
+    // Initialize wallet UI when the DOM is ready
+    document.addEventListener('DOMContentLoaded', initWallet)
+    // Initialize map toggle and set Map input max to available
+    document.addEventListener('DOMContentLoaded', initMapToggle)
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        const maxAvail = window.mapData ? Object.keys(window.mapData).length : 0
+        const input = document.getElementById('map-number')
+        if (input) input.max = Math.max(1, maxAvail)
+      } catch (_) { }
+    })
+    // Disconnect wallet: clear state and update UI
+    function disconnectWallet() {
+      try {
+        if (window.walletState) {
+          window.walletState.connected = false;
+          window.walletState.address = '';
+        }
+        // If any provider exposes a disconnect, call it safely
+        const provider = window.walletProvider || window.ethereum;
+        if (provider && typeof provider.disconnect === 'function') {
+          provider.disconnect().catch(() => { });
+        }
+      } catch (e) {
+        console.warn('Disconnect error:', e);
+      } finally {
+        if (typeof updateWalletAddress === 'function') {
+          updateWalletAddress();
+        }
+      }
+    }
+
+    // Hover menu uses container.connected set in updateWalletAddress
+  </script>
+  <script type="module">
+    // ===== GenLayer Integration — Weekly Block Challenge =====
+    // 1. Deploy contracts/leaderboard.py on GenLayer Studio or testnet-asimov
+    // 2. Paste the deployed contract address below
+    const GL_CONTRACT_ADDRESS = '0xE9bAA3CEe673Aa98119ca07356D34F71231e0A73'
+    const GL_NETWORK = 'studionet'  // or 'testnet-asimov'
+
+    let glClient = null
+
+    async function initGenLayer() {
+      const week = getWeekNumber()
+      const level = getChallengeLevel(week)
+      const infoEl = document.getElementById('challenge-info')
+      if (infoEl) {
+        infoEl.textContent = `Week ${getDisplayWeek(week)} · 5 min countdown`
+        infoEl.style.display = 'block'
+      }
+      if (!GL_CONTRACT_ADDRESS) return
+      try {
+        const { createClient, chains, createAccount } = await import('https://esm.sh/genlayer-js@latest')
+        // Public studionet test account (for demo/studionet only — not real funds)
+        const account = createAccount('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
+        const network = chains[GL_NETWORK] || chains.studionet
+        glClient = createClient({ chain: network, account })
+        loadWeeklyLeaderboard(week)
+        const addr = window.walletState?.address
+        if (addr) loadMyScore(addr)
+      } catch (e) {
+        console.warn('[GenLayer] init failed:', e)
+      }
+    }
+
+    async function loadWeeklyLeaderboard(week) {
+      if (!glClient || !GL_CONTRACT_ADDRESS) {
+        renderWeeklyLeaderboard([])
+        return
+      }
+      try {
+        const data = await glClient.readContract({
+          address: GL_CONTRACT_ADDRESS,
+          functionName: 'get_weekly_leaderboard',
+          args: [week],
+        })
+        renderWeeklyLeaderboard(data)
+      } catch (e) {
+        console.warn('[GenLayer] leaderboard load failed:', e)
+        renderWeeklyLeaderboard([])
+      }
+    }
+
+    async function loadMyScore(playerAddress) {
+      const panel = document.getElementById('my-score-panel')
+      if (!panel) return
+      if (!glClient || !GL_CONTRACT_ADDRESS || !playerAddress) {
+        panel.style.display = 'none'
+        return
+      }
+      const week = getWeekNumber()
+      try {
+        const score = await glClient.readContract({
+          address: GL_CONTRACT_ADDRESS,
+          functionName: 'get_player_score',
+          args: [playerAddress, week],
+        })
+        if (!score || !score.played) {
+          panel.style.display = 'none'
+          return
+        }
+        const moves = score.moves || 0
+        const time = score.time || 0
+        const xp = score.xp || Math.max(50, Math.round(1000 - time * 2 - moves * 5))
+        const grade = score.grade || 'C'
+        // Get rank from leaderboard
+        const lb = await glClient.readContract({
+          address: GL_CONTRACT_ADDRESS,
+          functionName: 'get_weekly_leaderboard',
+          args: [week],
+        })
+        const short = playerAddress.slice(0, 6) + '...' + playerAddress.slice(-4)
+        const rank = Array.isArray(lb) ? lb.findIndex(r => r.player === short) + 1 : 0
+        const gradeColors = { S: '#ffd700', A: '#7fffff', B: '#34eb8a', C: '#ffe082' }
+        const gc = gradeColors[grade] || '#ffe082'
+        document.getElementById('ms-rank').textContent = rank > 0 ? `#${rank}` : '#—'
+        document.getElementById('ms-stats').textContent = `${moves} moves · ${time}s`
+        document.getElementById('ms-xp').innerHTML = `<span style="color:${gc}">RANK ${grade} · +${xp} XP</span>`
+        panel.style.display = 'block'
+      } catch (e) {
+        panel.style.display = 'none'
+        console.warn('[GenLayer] my score load failed:', e)
+      }
+    }
+
+    function renderWeeklyLeaderboard(data) {
+      const rows = document.getElementById('gl-rows')
+      const container = document.getElementById('gl-leaderboard')
+      const cwRows = document.getElementById('challenge-win-leaderboard-rows')
+      const isEmpty = !Array.isArray(data) || data.length === 0
+      const gradeColors = { S: '#ffd700', A: '#5ff5ff', B: '#34eb8a', C: '#ffffff' }
+      const html = isEmpty
+        ? '<div class="gl-row" style="justify-content:center;opacity:0.5">No scores yet</div>'
+        : data.map((r, i) => {
+          const gc = gradeColors[r.grade] || '#34eb8a'
+          const right = r.grade
+            ? `<span style="color:${gc};font-weight:bold">${r.grade} · +${r.xp || 0}XP</span>`
+            : `<span style="opacity:0.7">${r.moves}mv · ${r.time}s</span>`
+          return `<div class="gl-row"><span>#${i + 1} ${r.player}</span>${right}</div>`
+        }).join('')
+      if (rows) rows.innerHTML = html
+      if (container) container.style.display = 'block'
+      if (cwRows) cwRows.innerHTML = html
+    }
+
+    function _setHomeBtn(enabled) {
+      const btn = document.querySelector('#challenge-win-modal .cw-btn')
+      if (!btn) return
+      btn.disabled = !enabled
+      btn.style.opacity = enabled ? '1' : '0.35'
+      btn.style.cursor = enabled ? 'pointer' : 'not-allowed'
+      btn.title = enabled ? '' : 'Wait for AI judgment before leaving'
+    }
+
+    function _revealGrade(grade, xp, verdict) {
+      const gradeEl = document.getElementById('challenge-win-grade')
+      const xpEl = document.getElementById('challenge-win-xp')
+      const verdictEl = document.getElementById('challenge-win-verdict')
+      if (gradeEl) gradeEl.innerHTML = `<div class="grade-reveal grade-${grade}">RANK ${grade}</div>`
+      if (xpEl) xpEl.innerHTML = `<span style="font-size:24px;font-weight:bold;color:#ffe082">+${xp} XP</span>`
+      if (verdictEl) verdictEl.innerHTML = `<span style="font-size:13px;opacity:0.88;font-style:italic">"${verdict}"</span>`
+      // Update room leaderboard with real grade
+      if (window.roomMode && window.currentRoomId) {
+        const myAddr = window.walletState?.address || 'you'
+        if (!window._roomScores) window._roomScores = {}
+        if (window._roomScores[myAddr]) {
+          window._roomScores[myAddr].grade = grade
+          window._roomScores[myAddr].xp = xp
+        }
+        _renderRoomScoresFromMemory()
+      }
+      _setHomeBtn(true)
+    }
+
+    function _localGrade(moves, timeSec) {
+      // Score: lower = better (moves weighted more than time)
+      const score = moves * 2 + timeSec
+      if (score <= 60)  return { grade: 'S', xp: 950, verdict: 'Incredible efficiency!' }
+      if (score <= 110) return { grade: 'A', xp: 750, verdict: 'Smart and precise!' }
+      if (score <= 200) return { grade: 'B', xp: 450, verdict: 'Good effort!' }
+      // C grade: XP varies so different scores give different XP
+      const xp = Math.max(50, Math.min(299, Math.round(500 - score * 0.8)))
+      return { grade: 'C', xp, verdict: 'Keep practicing!' }
+    }
+
+    async function submitWeeklyScore(moves, timeSec) {
+      const statusEl = document.getElementById('challenge-win-gl-status')
+      // Wait up to 8s for glClient to initialize
+      if (!glClient && GL_CONTRACT_ADDRESS) {
+        if (statusEl) statusEl.textContent = 'Connecting to GenLayer...'
+        for (let i = 0; i < 16; i++) {
+          await new Promise(r => setTimeout(r, 500))
+          if (glClient) break
+        }
+      }
+      if (!glClient || !GL_CONTRACT_ADDRESS) {
+        // Fallback: local grade reveal
+        const { grade, xp, verdict } = _localGrade(moves, timeSec)
+        _revealGrade(grade, xp, verdict)
+        if (statusEl) statusEl.textContent = ''
+        return
+      }
+      const player = window.walletState?.address
+      const week = window.challengeWeek || getWeekNumber()
+      if (!player) {
+        // No wallet: reveal local grade but don't submit
+        const { grade, xp, verdict } = _localGrade(moves, timeSec)
+        _revealGrade(grade, xp, verdict)
+        if (statusEl) statusEl.textContent = 'Connect wallet to save your rank on-chain'
+        return
+      }
+      try {
+        if (statusEl) statusEl.textContent = 'Submitting to GenLayer — AI validators judging...'
+        const txHash = await glClient.writeContract({
+          address: GL_CONTRACT_ADDRESS,
+          functionName: 'submit_score',
+          args: [player, week, moves, timeSec],
+        })
+        if (statusEl) statusEl.textContent = 'AI consensus in progress... (~30s)'
+        await glClient.waitForTransactionReceipt({ hash: txHash, timeout: 120_000 })
+        // Read back AI verdict from contract
+        let grade = 'C', xp = 150, verdict = 'Level completed!'
+        try {
+          const scoreResult = await glClient.readContract({
+            address: GL_CONTRACT_ADDRESS,
+            functionName: 'get_player_score',
+            args: [player, week],
+          })
+          if (scoreResult && scoreResult.played) {
+            grade = scoreResult.grade || 'C'
+            xp = scoreResult.xp || 150
+            verdict = scoreResult.verdict || 'Level completed!'
+          }
+        } catch (_) { }
+        _revealGrade(grade, xp, verdict)
+        await loadWeeklyLeaderboard(week)
+        if (window.walletState?.address) loadMyScore(window.walletState.address)
+        if (statusEl) statusEl.textContent = 'Optimistic Democracy confirmed ✓'
+        setTimeout(() => { if (statusEl) statusEl.textContent = '' }, 4000)
+      } catch (e) {
+        const msg = e?.message || ''
+        if (msg.includes('Already')) {
+          if (statusEl) statusEl.textContent = 'Already submitted this week!'
+          const { grade, xp, verdict } = _localGrade(moves, timeSec)
+          _revealGrade(grade, xp, verdict)
+        } else {
+          const { grade, xp, verdict } = _localGrade(moves, timeSec)
+          _revealGrade(grade, xp, verdict)
+          if (statusEl) statusEl.textContent = 'Submit failed: ' + msg.slice(0, 50)
+        }
+        console.warn('[GenLayer] submit failed:', e)
+      }
+    }
+
+    // ── Room functions ────────────────────────────────────────────────────────
+
+    const WS_URL = 'ws://localhost:3001'
+    let roomWs = null
+
+    function _roomCode() {
+      const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+      let code = 'BH'
+      for (let i = 0; i < 4; i++) code += c[Math.floor(Math.random() * c.length)]
+      return code
+    }
+
+    let _lobbyWs = null
+    let _lobbyInterval = null
+
+    function _connectRoomWs(onOpen) {
+      if (roomWs && roomWs.readyState === WebSocket.OPEN) { onOpen(); return }
+      roomWs = new WebSocket(WS_URL)
+      roomWs.onopen = onOpen
+      roomWs.onerror = () => {
+        document.getElementById('room-status').textContent = 'Cannot connect to room server'
+      }
+      roomWs.onmessage = _onRoomMessage
+    }
+
+    function fetchLobby() {
+      if (_lobbyWs && _lobbyWs.readyState === WebSocket.OPEN) {
+        _lobbyWs.send(JSON.stringify({ type: 'get-rooms' }))
+        return
+      }
+      _lobbyWs = new WebSocket(WS_URL)
+      _lobbyWs.onopen = () => _lobbyWs.send(JSON.stringify({ type: 'get-rooms' }))
+      _lobbyWs.onmessage = e => {
+        let msg; try { msg = JSON.parse(e.data) } catch { return }
+        if (msg.type === 'rooms-list') _renderLobby(msg.rooms)
+      }
+      _lobbyWs.onerror = () => {}
+    }
+
+    function _renderLobby(rooms) {
+      const list = document.getElementById('lobby-list')
+      if (!list) return
+      if (!rooms || rooms.length === 0) {
+        list.innerHTML = '<div class="lobby-empty">No open rooms yet</div>'
+        return
+      }
+      list.innerHTML = rooms.map(r => {
+        const host = (r.host || '').slice(0,6) + '...' + (r.host || '').slice(-4)
+        return `<div class="lobby-row">
+          <div class="lobby-row-info">
+            <span class="lobby-row-host">${host}</span>
+            <div class="lobby-row-meta">
+              <span class="lobby-lvl-badge">LVL ${r.level}</span>
+              <span class="lobby-players-badge">👥 ${r.players}/2</span>
+            </div>
+          </div>
+          <button class="lobby-join-btn" onclick="joinRoomById('${r.roomId}')">JOIN →</button>
+        </div>`
+      }).join('')
+    }
+
+    async function joinRoomById(roomId) {
+      if (!window.walletState?.address) {
+        document.getElementById('room-status').textContent = '🔗 Connect wallet first!'
+        const ok = await ensureWalletConnected()
+        if (!ok || !window.walletState?.address) {
+          document.getElementById('room-status').textContent = '❌ Wallet required to join a room'
+          return
+        }
+      }
+      const player = window.walletState.address
+      const week = getWeekNumber()
+      window.currentRoomId = roomId
+      window.roomWeek = week
+      document.getElementById('room-status').textContent = '🔌 Joining room...'
+      _connectRoomWs(() => {
+        roomWs.send(JSON.stringify({ type: 'join-room', roomId, playerId: player, addr: player }))
+      })
+    }
+
+    // Auto-refresh lobby every 5s when home screen visible
+    function _startLobbyPolling() {
+      fetchLobby()
+      _lobbyInterval = setInterval(() => {
+        const home = document.getElementById('home-screen')
+        if (home && !home.classList.contains('hidden')) fetchLobby()
+      }, 5000)
+    }
+
+    function _onRoomMessage(e) {
+      let msg
+      try { msg = JSON.parse(e.data) } catch { return }
+      const statusEl = document.getElementById('room-status')
+      const rcmStatus = document.getElementById('rcm-status')
+
+      if (msg.type === 'error') {
+        if (statusEl) statusEl.textContent = '❌ ' + msg.message
+        return
+      }
+
+      if (msg.type === 'room-created') {
+        if (rcmStatus) rcmStatus.textContent = '⏳ Waiting for opponent...'
+      }
+
+      if (msg.type === 'player-joined') {
+        const count = msg.count || 0
+        if (rcmStatus) rcmStatus.textContent = `👥 ${count} player${count > 1 ? 's' : ''} in room`
+      }
+
+      if (msg.type === 'room-joined') {
+        window.roomLevel = msg.level
+        if (statusEl) statusEl.textContent = `✅ Joined room — waiting for game start...`
+      }
+
+      if (msg.type === 'game-start') {
+        window.roomLevel = msg.level
+        window.roomMode = true
+        // Close modal if open
+        document.getElementById('room-code-modal').classList.remove('active')
+        document.getElementById('room-status').textContent = ''
+        _startRoomGame(msg.level)
+      }
+
+      if (msg.type === 'score') {
+        // Opponent finished — update leaderboard
+        _updateRoomOpponentScore(msg)
+      }
+
+      if (msg.type === 'player-left') {
+        const winStatus = document.getElementById('challenge-win-gl-status')
+        if (winStatus) winStatus.textContent = '⚠️ Opponent left the room'
+      }
+
+      if (msg.type === 'room-complete') {
+        const winStatus = document.getElementById('challenge-win-gl-status')
+        if (winStatus) winStatus.textContent = '🏆 All players finished!'
+      }
+    }
+
+    // Store room scores from WebSocket in memory
+    if (!window._roomScores) window._roomScores = {}
+
+    function _updateRoomOpponentScore(msg) {
+      // Store in memory
+      const pid = msg.playerId || msg.addr || ''
+      window._roomScores[pid] = {
+        addr: msg.addr || pid,
+        moves: msg.moves || 0,
+        time: msg.time || 0,
+        grade: msg.grade || 'C',
+        xp: msg.xp || 150
+      }
+      // Re-render if modal visible
+      const rows = document.getElementById('challenge-win-leaderboard-rows')
+      if (rows) _renderRoomScoresFromMemory()
+    }
+
+    function _renderRoomScoresFromMemory() {
+      const rows = document.getElementById('challenge-win-leaderboard-rows')
+      const titleEl = document.getElementById('gl-leaderboard-title')
+      if (!rows) return
+      if (titleEl) titleEl.textContent = `ROOM ${window.currentRoomId || ''}`
+      const scores = Object.values(window._roomScores)
+      if (!scores.length) return
+      const myAddr = (window.walletState?.address || '').toLowerCase()
+      // Sort by moves asc, then time asc (pending "..." goes last)
+      scores.sort((a, b) => {
+        if (a.grade === '...') return 1
+        if (b.grade === '...') return -1
+        return a.moves !== b.moves ? a.moves - b.moves : a.time - b.time
+      })
+      const gradeColors = { S: '#ffe082', A: '#a5d6a7', B: '#90caf9', C: '#ffffff' }
+      // Detect ties by XP (ignore pending "...")
+      const xpValues = scores.map(s => s.grade !== '...' ? s.xp : null)
+      const allSameXp = xpValues.every(v => v !== null) && xpValues.length > 1 && xpValues.every(v => v === xpValues[0])
+      rows.innerHTML = scores.map((s, i) => {
+        const isMe = (s.addr || '').toLowerCase() === myAddr
+        const short = isMe ? 'YOU' : ((s.addr || '').slice(0,6) + '...' + (s.addr || '').slice(-4))
+        // Check tie with adjacent score
+        const isTie = s.grade !== '...' && scores.some((o, j) => j !== i && o.grade !== '...' && o.xp === s.xp && o.moves === s.moves && o.time === s.time)
+        const medal = isTie ? '🤝' : (i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉')
+        const gc = gradeColors[s.grade] || '#fff'
+        const youBadge = isMe ? `<span style="font-size:9px;background:rgba(255,255,255,0.25);border-radius:8px;padding:1px 5px;margin-left:4px;letter-spacing:0.5px">YOU</span>` : ''
+        const gradeDisplay = s.grade === '...' ? `<span style="opacity:0.5;font-size:11px">AI...</span>` : `<span style="color:${gc};font-weight:bold">${s.grade}</span>`
+        const tieLabel = isTie ? `<span style="font-size:9px;color:#ffe082;margin-left:4px">TIE</span>` : ''
+        return `<div class="lb-row" style="${isMe ? 'background:rgba(255,255,255,0.12);border-radius:8px;padding:4px 2px;' : ''}">
+          <span class="lb-rank">${medal}</span>
+          <span class="lb-addr" style="${isMe ? 'font-weight:bold' : ''}">${short}${youBadge}${tieLabel}</span>
+          <span class="lb-score">${s.moves}mv · ${s.time}s</span>
+          ${gradeDisplay}
+        </div>`
+      }).join('')
+    }
+
+    function showLevelPicker() {
+      const player = window.walletState?.address
+      if (!player) { document.getElementById('room-status').textContent = 'Connect wallet first'; return }
+      document.getElementById('room-type-modal').classList.add('active')
+    }
+
+    function createRoomWithType(isPublic) {
+      document.getElementById('room-type-modal').classList.remove('active')
+      const lvl = parseInt(document.getElementById('rtm-level-select').value) || 1
+      createRoomFlow(lvl, isPublic)
+    }
+
+    function createRoomFlow(selectedLevel, isPublic) {
+      const player = window.walletState?.address
+      if (!player) { document.getElementById('room-status').textContent = 'Connect wallet first'; return }
+      const code = _roomCode()
+      const week = getWeekNumber()
+      window.currentRoomId = code
+      window.roomMode = false
+      window.roomIsPublic = (isPublic !== false)
+      window.roomLevel = selectedLevel || getChallengeLevel(week)
+      window.roomWeek = week
+      document.getElementById('room-status').textContent = ''
+      document.getElementById('rcm-code-display').textContent = code
+      const rcmStatus = document.getElementById('rcm-status')
+      const visLabel = window.roomIsPublic ? '🌍 Public room — visible in lobby' : '🔒 Private room — share your code'
+      if (rcmStatus) rcmStatus.textContent = visLabel
+      document.getElementById('room-code-modal').classList.add('active')
+      _connectRoomWs(() => {
+        roomWs.send(JSON.stringify({
+          type: 'create-room',
+          roomId: code,
+          playerId: player,
+          addr: player,
+          level: window.roomLevel,
+          isPublic: window.roomIsPublic,
+        }))
+      })
+    }
+
+    async function joinRoomFlow() {
+      const code = document.getElementById('room-code-input').value.trim().toUpperCase()
+      if (!code || code.length < 4) { document.getElementById('room-status').textContent = 'Enter a valid room code'; return }
+      if (!window.walletState?.address) {
+        document.getElementById('room-status').textContent = '🔗 Connect wallet first!'
+        const ok = await ensureWalletConnected()
+        if (!ok || !window.walletState?.address) {
+          document.getElementById('room-status').textContent = '❌ Wallet required to join a room'
+          return
+        }
+      }
+      const player = window.walletState.address
+      const week = getWeekNumber()
+      window.currentRoomId = code
+      window.roomWeek = week
+      document.getElementById('room-status').textContent = '🔌 Joining room...'
+      document.getElementById('room-code-input').value = ''
+      _connectRoomWs(() => {
+        roomWs.send(JSON.stringify({
+          type: 'join-room',
+          roomId: code,
+          playerId: player,
+          addr: player,
+        }))
+      })
+    }
+
+    function startRoomGame() {
+      document.getElementById('room-code-modal').classList.remove('active')
+      window.roomMode = true
+      _startRoomGame(window.roomLevel || getChallengeLevel(getWeekNumber()))
+    }
+
+    function copyRoomCode() {
+      const code = document.getElementById('rcm-code-display').textContent
+      navigator.clipboard?.writeText(code).catch(() => {})
+      const btn = document.querySelector('.rcm-copy')
+      if (btn) { btn.textContent = 'COPIED!'; setTimeout(() => btn.textContent = 'COPY CODE', 1500) }
+    }
+
+    function _startRoomGame(level) {
+      window.moveCount = 0
+      window.challengeStartTime = Date.now()
+      window.weeklyMode = false
+      document.getElementById('home-screen').classList.add('hidden')
+      document.getElementById('restart').style.display = 'block'
+      document.getElementById('level').style.display = 'block'
+      document.getElementById('lives').style.display = 'block'
+      document.getElementById('move-counter').style.display = 'block'
+      document.getElementById('map-loading').style.display = 'block'
+      ensureMapsReady().then(() => {
+        initLives(5)
+        setup(level)
+        document.getElementById('map-loading').style.display = 'none'
+        startCountdown()
+        try { loop() } catch (_) {}
+      })
+    }
+
+    async function submitRoomScore(moves, timeSec) {
+      const statusEl = document.getElementById('challenge-win-gl-status')
+      const roomId = window.currentRoomId
+      if (!roomId) return
+      if (!glClient || !GL_CONTRACT_ADDRESS) {
+        const { grade, xp, verdict } = _localGrade(moves, timeSec)
+        _revealGrade(grade, xp, verdict)
+        return
+      }
+      const player = window.walletState?.address
+      if (!player) {
+        const { grade, xp, verdict } = _localGrade(moves, timeSec)
+        _revealGrade(grade, xp, verdict)
+        if (statusEl) statusEl.textContent = 'Connect wallet to save your score'
+        return
+      }
+      try {
+        if (statusEl) statusEl.textContent = 'Submitting to room — AI judging...'
+        const week = window.roomWeek || getWeekNumber()
+        const txHash = await glClient.writeContract({
+          address: GL_CONTRACT_ADDRESS,
+          functionName: 'submit_room_score',
+          args: [roomId, player, week, moves, timeSec],
+        })
+        if (statusEl) statusEl.textContent = 'AI consensus in progress... (~30s)'
+        await glClient.waitForTransactionReceipt({ hash: txHash, timeout: 120_000 })
+        let grade = 'C', xp = 150, verdict = 'Level completed!'
+        try {
+          const lb = await glClient.readContract({
+            address: GL_CONTRACT_ADDRESS,
+            functionName: 'get_room_leaderboard',
+            args: [roomId],
+          })
+          const short = player.slice(0,6) + '...' + player.slice(-4)
+          const me = Array.isArray(lb) ? lb.find(r => r.player === short) : null
+          if (me) { grade = me.grade || 'C'; xp = me.xp || 150 }
+          renderRoomLeaderboard(lb)
+        } catch (_) {}
+        _revealGrade(grade, xp, verdict)
+        // Broadcast score to room via WebSocket
+        _wsBroadcastScore(moves, timeSec, grade, xp, player)
+        if (statusEl) statusEl.textContent = 'Optimistic Democracy confirmed ✓'
+        setTimeout(() => { if (statusEl) statusEl.textContent = '' }, 4000)
+      } catch (e) {
+        const { grade, xp, verdict } = _localGrade(moves, timeSec)
+        _revealGrade(grade, xp, verdict)
+        // Still broadcast via WebSocket even if GenLayer fails
+        const player2 = window.walletState?.address || ''
+        _wsBroadcastScore(moves, timeSec, grade, xp, player2)
+        if (statusEl) statusEl.textContent = (e?.message || '').includes('Already') ? 'Already submitted!' : 'Submit failed'
+      }
+    }
+
+    function _wsBroadcastScore(moves, timeSec, grade, xp, addr) {
+      if (roomWs && roomWs.readyState === WebSocket.OPEN) {
+        roomWs.send(JSON.stringify({
+          type: 'score',
+          playerId: addr,
+          addr: addr,
+          moves, time: timeSec, grade, xp,
+        }))
+      }
+    }
+
+    async function loadRoomLeaderboard(roomId) {
+      if (!glClient || !GL_CONTRACT_ADDRESS || !roomId) return
+      try {
+        const data = await glClient.readContract({
+          address: GL_CONTRACT_ADDRESS,
+          functionName: 'get_room_leaderboard',
+          args: [roomId],
+        })
+        renderRoomLeaderboard(data)
+      } catch (_) {}
+    }
+
+    function renderRoomLeaderboard(data) {
+      const cwRows = document.getElementById('challenge-win-leaderboard-rows')
+      const titleEl = document.getElementById('gl-leaderboard-title')
+      if (titleEl && window.roomMode) titleEl.textContent = `ROOM ${window.currentRoomId || ''}`
+      const gradeColors = { S: '#ffd700', A: '#5ff5ff', B: '#34eb8a', C: '#ffffff' }
+      const isEmpty = !Array.isArray(data) || data.length === 0
+      const gradeOrder = { S: 4, A: 3, B: 2, C: 1 }
+      const sorted = isEmpty ? [] : [...data].sort((a, b) => {
+        const xpDiff = (b.xp || 0) - (a.xp || 0)
+        if (xpDiff !== 0) return xpDiff
+        return (gradeOrder[b.grade] || 0) - (gradeOrder[a.grade] || 0)
+      })
+      const html = isEmpty
+        ? '<div class="gl-row" style="justify-content:center;color:rgba(255,255,255,0.5)">No scores yet</div>'
+        : sorted.map((r, i) => {
+          const gc = gradeColors[r.grade] || '#ffffff'
+          const right = r.grade
+            ? `<span style="color:${gc};font-weight:bold">${r.grade} · +${r.xp || 0}XP</span>`
+            : `<span>${r.moves}mv · ${r.time}s</span>`
+          return `<div class="gl-row"><span>#${i+1} ${r.player}</span>${right}</div>`
+        }).join('')
+      if (cwRows) cwRows.innerHTML = html
+    }
+
+    // Enable room buttons when wallet connected
+    function _updateRoomBtns(enabled) {
+      const cb = document.getElementById('create-room-btn')
+      const jb = document.getElementById('join-room-btn')
+      if (cb) cb.disabled = !enabled
+      if (jb) jb.disabled = !enabled
+    }
+
+    // Expose to global scope
+    window.submitWeeklyScore = submitWeeklyScore
+    window.submitRoomScore = submitRoomScore
+    window.loadWeeklyLeaderboard = loadWeeklyLeaderboard
+    window.loadRoomLeaderboard = loadRoomLeaderboard
+    window.loadMyScore = loadMyScore
+    window._setHomeBtn = _setHomeBtn
+    window._updateRoomBtns = _updateRoomBtns
+    window.startRoomGame = startRoomGame
+    window.copyRoomCode = copyRoomCode
+    window.createRoomFlow = createRoomFlow
+    window.showLevelPicker = showLevelPicker
+    window.createRoomWithType = createRoomWithType
+    window.joinRoomFlow = joinRoomFlow
+    window.joinRoomById = joinRoomById
+    window.fetchLobby = fetchLobby
+    window.submitRoomScore = submitRoomScore
+    window.loadRoomLeaderboard = loadRoomLeaderboard
+    window.GL_CONTRACT_ADDRESS = GL_CONTRACT_ADDRESS
+    Object.defineProperty(window, 'glClient', { get: () => glClient, set: v => { glClient = v } })
+
+    // Init GenLayer after page loads
+    document.addEventListener('DOMContentLoaded', () => { initGenLayer(); _startLobbyPolling() })
+  </script>
+</body>
+
+</html>
